@@ -18,14 +18,8 @@ source scripts/base-16.sh
 fancy_echo "Linking dotfiles into ~..."
 RCRC=rcrc rcup -v
 
-source scripts/zsh.sh
-
-CURRENT_SHELL=$(echo $0)
-if [[ $CURRENT_SHELL != *zsh ]]; then
-  fancy_echo "Please re-run in a new tab/window with ZSH"
-  exit 1
-fi
-
 source scripts/asdf.sh
-
+source scripts/fonts.sh
 source scripts/bin.sh
+
+fancy_echo "Bootstrapped!"

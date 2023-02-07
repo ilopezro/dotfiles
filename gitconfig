@@ -1,0 +1,31 @@
+[user]
+  name = Isai Lopez Rodas
+  email = isai@iheartjane.com
+  # add gpg key here
+
+[format]
+  pretty = format:%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an (%G?)>%Creset
+
+[color]
+  diff = always
+  status = always
+  ui = auto
+[init]
+  templatedir = ~/.git_template
+  defaultBranch = main
+[rerere]
+  enabled = true
+[diff]
+  compactionHeuristic = true
+[commit]
+  gpgsign = true
+[gpg]
+	program = gpg2
+[push]
+  default = current
+  autoSetupRemote = true
+[pull]
+  rebase = true
+[rebase]
+  autosquash = true
+  autostash = true
