@@ -1,0 +1,5 @@
+brew "asdf"
+brew "aws-vault"
+brew "awscli"
+brew "gh"
+brew "stow"

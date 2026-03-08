@@ -1,0 +1,14 @@
+[gpg]
+	format = ssh
+[user]
+	name = Isai Lopez Rodas
+[commit]
+	gpgsign = true
+[tag]
+	gpgSign = true
+[push]
+	autoSetupRemote = true
+[pull]
+	rebase = true
+[core]
+	excludesfile = ~/.config/git/ignore

@@ -1,0 +1,41 @@
+#!/bin/sh
+
+DOTFILES_DIR="$HOME/dotfiles"
+
+sub_help() {
+  echo "Usage: dot <command>"
+  echo ""
+  echo "Commands:"
+  echo "  update    Update packages and oh-my-zsh"
+  echo "  clean     Clean up caches (brew, gem)"
+  echo "  edit      Open dotfiles in editor"
+  echo "  help      This help message"
+}
+
+sub_update() {
+  echo "Updating Homebrew..."
+  brew update && brew upgrade
+
+  echo "Updating Oh My Zsh..."
+  "$ZSH/tools/upgrade.sh"
+}
+
+sub_clean() {
+  echo "Cleaning Homebrew cache..."
+  brew cleanup
+
+  echo "Cleaning gem cache..."
+  gem cleanup 2>/dev/null
+}
+
+sub_edit() {
+  code "$DOTFILES_DIR"
+}
+
+case "$1" in
+  update)  sub_update ;;
+  clean)   sub_clean ;;
+  edit)    sub_edit ;;
+  help)    sub_help ;;
+  *)       sub_help ;;
+esac
