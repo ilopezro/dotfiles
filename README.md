@@ -8,13 +8,8 @@ Personal dotfiles for macOS, managed with [GNU Stow](https://www.gnu.org/softwar
 # 1. Install Xcode Command Line Tools
 xcode-select --install
 
-# 2. Install Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# 3. Clone this repo
-git clone https://github.com/ilopezro/dotfiles.git ~/dotfiles
-
-# 4. Run the installer
+# 2. Clone and install
+bash <(curl -fsSL https://raw.githubusercontent.com/ilopezro/dotfiles/main/remote-install.sh)
 cd ~/dotfiles && make
 ```
 
@@ -25,11 +20,12 @@ This will install Homebrew packages, cask apps, Oh My Zsh (with plugins), symlin
 These steps can't be automated and need to be done manually:
 
 ```sh
-# Set git email
-git config --global user.email "your@email.com"
-
-# Set git signing key
-git config --global user.signingkey ~/.ssh/id_ed25519.pub
+# Create ~/.config/git/local with machine-specific git settings
+cat > ~/.config/git/local << 'EOF'
+[user]
+	email = your@email.com
+	signingkey = ~/.ssh/id_ed25519.pub
+EOF
 
 # Set up asdf plugins
 asdf plugin add nodejs
