@@ -14,7 +14,7 @@ if [ -d ~/.asdf/plugins/ruby ]; then
 else
   asdf plugin-add ruby https://github.com/asdf-vm/asdf-ruby.git
 fi
-asdf install ruby latest
+# asdf install ruby latest
 
 echo "Installing nodejs..."
 if [ -d ~/.asdf/plugins/nodejs ]; then
