@@ -20,10 +20,10 @@ brew:
 packages: brew-packages cask-apps
 
 brew-packages: brew
-	brew bundle --file=$(DOTFILES_DIR)install/Brewfile --no-lock
+	brew bundle --file=$(DOTFILES_DIR)install/Brewfile
 
 cask-apps: brew
-	brew bundle --file=$(DOTFILES_DIR)install/Caskfile --no-lock
+	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
 
 oh-my-zsh:
 	@if [ ! -d "$(HOME)/.oh-my-zsh" ]; then \
