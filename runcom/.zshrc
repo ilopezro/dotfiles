@@ -9,7 +9,7 @@ plugins=(git asdf zsh-autosuggestions zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
-fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+fpath=($HOME/dotfiles/completions /opt/homebrew/share/zsh/site-functions ${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
 autoload -Uz compinit && compinit
 zstyle ':completion:*' menu select
 

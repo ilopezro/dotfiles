@@ -1,0 +1,14 @@
+#compdef dot
+
+_dot() {
+  local -a commands
+  commands=(
+    'update:Update packages and oh-my-zsh'
+    'clean:Clean up caches (brew, gem)'
+    'edit:Open dotfiles in editor'
+    'help:Show help message'
+  )
+  _describe 'command' commands
+}
+
+_dot "$@"
