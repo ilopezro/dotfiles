@@ -3,11 +3,11 @@ STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh link unlink vscode-extensions
+.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh go-tools link unlink vscode-extensions
 
 all: macos
 
-macos: sudo packages oh-my-zsh link vscode-extensions
+macos: sudo packages oh-my-zsh go-tools link vscode-extensions
 
 sudo:
 	sudo -v
@@ -24,6 +24,10 @@ brew-packages: brew
 
 cask-apps: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
+
+go-tools:
+	go install golang.org/x/tools/gopls@latest
+	asdf reshim golang
 
 oh-my-zsh:
 	@if [ ! -d "$(HOME)/.oh-my-zsh" ]; then \

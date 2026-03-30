@@ -16,5 +16,10 @@
     "go.lintFlags": [
         "--fast"
     ],
-    "claudeCode.preferredLocation": "panel"
+    "go.toolsManagement.autoUpdate": "off",
+    "gopls": {
+        "ui.semanticTokens": true
+    },
+    "claudeCode.preferredLocation": "panel",
+    "eslint.useFlatConfig": true
 }
