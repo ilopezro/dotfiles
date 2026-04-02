@@ -7,7 +7,7 @@ export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
 all: macos
 
-macos: sudo packages oh-my-zsh go-tools link vscode-extensions
+macos: sudo packages oh-my-zsh link go-tools vscode-extensions
 
 sudo:
 	sudo -v
@@ -26,6 +26,10 @@ cask-apps: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
 
 go-tools:
+	@asdf plugin list 2>/dev/null | grep -q golang || asdf plugin add golang
+	@asdf install golang latest
+	@asdf set -u golang latest
+	@asdf reshim golang
 	go install golang.org/x/tools/gopls@latest
 	asdf reshim golang
 
