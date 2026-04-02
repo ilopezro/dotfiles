@@ -1,0 +1,66 @@
+# Dotfiles auto-update check
+# Sourced on every terminal open via .zshrc system dotfiles loop
+
+_dotfiles_update() {
+  emulate -L zsh
+
+  local DOTFILES_DIR="$HOME/dotfiles"
+  local CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
+  local TIMESTAMP_FILE="$CACHE_DIR/.dotfiles-update"
+  local UPDATE_FREQUENCY=13  # days
+
+  # Bail if not a terminal or git unavailable
+  [[ -t 1 ]] || return
+  command git --version &>/dev/null || return
+
+  # Ensure cache dir exists
+  mkdir -p "$CACHE_DIR"
+
+  # Check timestamp — only proceed every UPDATE_FREQUENCY days
+  zmodload zsh/datetime
+  local today=$(( EPOCHSECONDS / 60 / 60 / 24 ))
+  local last_epoch=0
+  local LAST_EPOCH=0
+  [[ -f "$TIMESTAMP_FILE" ]] && source "$TIMESTAMP_FILE"
+  last_epoch=$LAST_EPOCH
+  (( (today - last_epoch) >= UPDATE_FREQUENCY )) || return
+
+  # Fetch from remote to check for updates
+  printf "[dotfiles] Checking for updates..."
+  command git -C "$DOTFILES_DIR" fetch 2>/dev/null || { printf "\r\e[0K"; return; }
+  printf "\r\e[0K"
+
+  # Compare local HEAD to upstream
+  local local_head remote_head
+  local_head=$(command git -C "$DOTFILES_DIR" rev-parse HEAD 2>/dev/null) || return
+  remote_head=$(command git -C "$DOTFILES_DIR" rev-parse @{u} 2>/dev/null) || return
+  [[ "$local_head" != "$remote_head" ]] || { echo "LAST_EPOCH=$today" >! "$TIMESTAMP_FILE"; return; }
+
+  # Check if repo is dirty
+  local dirty=0
+  command git -C "$DOTFILES_DIR" diff --quiet && command git -C "$DOTFILES_DIR" diff --cached --quiet || dirty=1
+
+  if (( dirty )); then
+    echo "[dotfiles] Updates available but you have local changes. Run \`dot update\` manually when ready."
+    echo "LAST_EPOCH=$today" >! "$TIMESTAMP_FILE"
+    return
+  fi
+
+  # Prompt user
+  printf "[dotfiles] Updates available. Would you like to update? [Y/n] "
+  read -r -k 1 option
+  [[ "$option" = $'\n' ]] || echo
+  case "$option" in
+    [yY$'\n'])
+      dot update
+      ;;
+    [nN]|*)
+      echo "[dotfiles] Run \`dot update\` whenever you're ready."
+      ;;
+  esac
+
+  echo "LAST_EPOCH=$today" >! "$TIMESTAMP_FILE"
+}
+
+_dotfiles_update
+unset -f _dotfiles_update

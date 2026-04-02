@@ -3,6 +3,8 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
+zstyle ':omz:update' mode disabled
+
 COMPLETION_WAITING_DOTS="true"
 
 plugins=(git asdf zsh-autosuggestions zsh-syntax-highlighting)

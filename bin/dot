@@ -6,18 +6,27 @@ sub_help() {
   echo "Usage: dot <command>"
   echo ""
   echo "Commands:"
-  echo "  update    Update packages and oh-my-zsh"
+  echo "  update    Update dotfiles, Homebrew packages, and oh-my-zsh"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
 }
 
 sub_update() {
-  echo "Updating Homebrew..."
+  echo "[1/3] Updating dotfiles..."
+  if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
+    git -C "$DOTFILES_DIR" pull
+  else
+    echo "  Skipping: you have local changes in $DOTFILES_DIR"
+  fi
+
+  echo "[2/3] Updating Homebrew..."
   brew update && brew upgrade
 
-  echo "Updating Oh My Zsh..."
+  echo "[3/3] Updating Oh My Zsh..."
   "$ZSH/tools/upgrade.sh"
+
+  echo "Done!"
 }
 
 sub_clean() {
