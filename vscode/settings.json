@@ -1,6 +1,6 @@
 {
     "window.commandCenter": true,
-    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.colorTheme": "Solarized Dark",
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },

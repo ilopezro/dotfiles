@@ -19,3 +19,4 @@ zstyle ':completion:*' menu select
 for DOTFILE in "$HOME/dotfiles/system"/.*; do
   [ -f "$DOTFILE" ] && source "$DOTFILE"
 done
+source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script

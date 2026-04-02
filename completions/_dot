@@ -3,6 +3,7 @@
 _dot() {
   local -a commands
   commands=(
+    'install:Install packages from Brewfile and Caskfile'
     'update:Update packages and oh-my-zsh'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in editor'

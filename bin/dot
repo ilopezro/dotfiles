@@ -7,9 +7,18 @@ sub_help() {
   echo ""
   echo "Commands:"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions"
+  echo "  install   Install packages from Brewfile and Caskfile"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
+}
+
+sub_install() {
+  echo "Installing Homebrew packages..."
+  brew bundle --file="$DOTFILES_DIR/install/Brewfile"
+
+  echo "Installing cask apps..."
+  brew bundle --file="$DOTFILES_DIR/install/Caskfile"
 }
 
 sub_update() {
@@ -47,6 +56,7 @@ sub_edit() {
 }
 
 case "$1" in
+  install) sub_install ;;
   update)  sub_update ;;
   clean)   sub_clean ;;
   edit)    sub_edit ;;

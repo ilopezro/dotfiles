@@ -3,11 +3,11 @@ STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh asdf-plugins go-tools link unlink vscode-extensions
+.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh safe-chain asdf-plugins go-tools link unlink vscode-extensions
 
 all: macos
 
-macos: sudo packages oh-my-zsh link asdf-plugins go-tools vscode-extensions
+macos: sudo packages oh-my-zsh safe-chain link asdf-plugins go-tools vscode-extensions
 
 sudo:
 	sudo -v
@@ -24,6 +24,14 @@ brew-packages: brew
 
 cask-apps: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
+
+safe-chain:
+	@if ! command -v safe-chain >/dev/null 2>&1; then \
+		echo "Installing safe-chain..."; \
+		curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh; \
+	else \
+		echo "safe-chain already installed."; \
+	fi
 
 asdf-plugins:
 	@asdf plugin list 2>/dev/null | grep -q nodejs  || asdf plugin add nodejs
