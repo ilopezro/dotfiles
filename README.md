@@ -76,11 +76,27 @@ dot update
 
 ## Useful Commands
 
+### `dot` CLI
+
 ```sh
 dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions
-dot clean     # Clean up caches
+dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
+```
+
+### Makefile targets
+
+```sh
+make                    # Full setup (same as make macos)
+make brew-packages      # Install Homebrew packages from Brewfile
+make cask-apps          # Install cask apps from Caskfile
+make oh-my-zsh          # Install Oh My Zsh and plugins
+make asdf-plugins       # Install asdf plugins and runtimes from .tool-versions
+make go-tools           # Install Go tools (gopls)
+make link               # Symlink all dotfiles via stow
+make unlink             # Remove symlinked dotfiles
+make vscode-extensions  # Install VS Code extensions from Codefile
 ```
 
 ## Customization
