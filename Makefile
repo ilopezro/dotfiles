@@ -3,11 +3,11 @@ STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh go-tools link unlink vscode-extensions
+.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh asdf-plugins go-tools link unlink vscode-extensions
 
 all: macos
 
-macos: sudo packages oh-my-zsh link go-tools vscode-extensions
+macos: sudo packages oh-my-zsh link asdf-plugins go-tools vscode-extensions
 
 sudo:
 	sudo -v
@@ -25,13 +25,18 @@ brew-packages: brew
 cask-apps: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
 
+asdf-plugins:
+	@asdf plugin list 2>/dev/null | grep -q nodejs  || asdf plugin add nodejs
+	@asdf plugin list 2>/dev/null | grep -q python  || asdf plugin add python
+	@asdf plugin list 2>/dev/null | grep -q golang  || asdf plugin add golang
+	@asdf plugin list 2>/dev/null | grep -q ruby    || asdf plugin add ruby
+	@asdf plugin list 2>/dev/null | grep -q air     || asdf plugin add air
+	@asdf install
+	@asdf reshim
+
 go-tools:
-	@asdf plugin list 2>/dev/null | grep -q golang || asdf plugin add golang
-	@asdf install golang latest
-	@asdf set -u golang latest
-	@asdf reshim golang
 	go install golang.org/x/tools/gopls@latest
-	asdf reshim golang
+	@asdf reshim golang
 
 oh-my-zsh:
 	@if [ ! -d "$(HOME)/.oh-my-zsh" ]; then \

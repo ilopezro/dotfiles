@@ -6,25 +6,30 @@ sub_help() {
   echo "Usage: dot <command>"
   echo ""
   echo "Commands:"
-  echo "  update    Update dotfiles, Homebrew packages, and oh-my-zsh"
+  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
 }
 
 sub_update() {
-  echo "[1/3] Updating dotfiles..."
+  echo "[1/4] Updating dotfiles..."
   if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
     git -C "$DOTFILES_DIR" pull
   else
     echo "  Skipping: you have local changes in $DOTFILES_DIR"
   fi
 
-  echo "[2/3] Updating Homebrew..."
+  echo "[2/4] Updating Homebrew..."
   brew update && brew upgrade
 
-  echo "[3/3] Updating Oh My Zsh..."
+  echo "[3/4] Updating Oh My Zsh..."
   "$ZSH/tools/upgrade.sh"
+
+  echo "[4/4] Updating VS Code extensions..."
+  cat "$DOTFILES_DIR/install/Codefile" | while read ext; do
+    code --install-extension "$ext" --force 2>/dev/null || true
+  done
 
   echo "Done!"
 }

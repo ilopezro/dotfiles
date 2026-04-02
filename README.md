@@ -8,7 +8,7 @@ Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](h
 - [Homebrew Cask](https://github.com/Homebrew/homebrew-cask) (apps: [Caskfile](./install/Caskfile))
 - [Oh My Zsh](https://ohmyz.sh) with plugins
 - [VS Code](https://code.visualstudio.com) (extensions: [Codefile](./install/Codefile))
-- [asdf](https://asdf-vm.com) for runtime version management
+- [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air)
 
 ## Fresh Install
 
@@ -36,7 +36,7 @@ cd ~/dotfiles && make
 
 Running `make` is idempotent — it's safe to run multiple times.
 
-This will install Homebrew packages, cask apps, Oh My Zsh (with plugins), symlink configs, and install VS Code extensions.
+This will install Homebrew packages, cask apps, Oh My Zsh (with plugins), symlink configs, install asdf plugins and runtimes, install Go tools, and install VS Code extensions.
 
 ## Post-Install
 
@@ -49,13 +49,6 @@ cat > ~/.config/git/local << 'EOF'
 	email = your@email.com
 	signingkey = ~/.ssh/id_ed25519.pub
 EOF
-
-# Set up asdf plugins
-asdf plugin add nodejs
-asdf plugin add ruby
-asdf plugin add golang
-asdf plugin add air https://github.com/ilopezro/asdf-air.git
-# Then install versions as needed: asdf install nodejs latest
 ```
 
 Populate a file for tokens and secrets (not committed):
@@ -67,10 +60,24 @@ touch ~/dotfiles/system/.exports
 
 Log into apps: 1Password, Arc, Slack, Spotify, Docker, etc.
 
+## Keeping Up to Date
+
+On every new terminal, dotfiles will check for updates every 13 days and prompt:
+
+```
+[dotfiles] Updates available. Would you like to update? [Y/n]
+```
+
+You can also update manually at any time:
+
+```sh
+dot update
+```
+
 ## Useful Commands
 
 ```sh
-dot update    # Update Homebrew packages and Oh My Zsh
+dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions
 dot clean     # Clean up caches
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
@@ -81,6 +88,7 @@ dot help      # Show available commands
 - **Brew packages**: Add to `install/Brewfile`, then run `make brew-packages`
 - **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
+- **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`
 - **Aliases**: Edit `system/.alias`
 - **Functions**: Edit `system/.function`
 - **Environment variables**: Edit `system/.env`
