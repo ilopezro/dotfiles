@@ -1,6 +1,7 @@
 DOTFILES_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
+CLAUDE_DIR := $(HOME)/.claude
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
 .PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh safe-chain asdf-plugins go-tools link unlink vscode-extensions
@@ -66,7 +67,7 @@ oh-my-zsh:
 		echo "zsh-syntax-highlighting already installed."; \
 	fi
 
-link: stow-runcom stow-config link-vscode
+link: stow-runcom stow-config link-vscode link-claude
 
 stow-runcom:
 	stow -d $(STOW_DIR) -t $(HOME) runcom
@@ -83,10 +84,23 @@ link-vscode:
 	fi
 	ln -sf $(DOTFILES_DIR)vscode/settings.json "$(VSCODE_DIR)/settings.json"
 
+link-claude:
+	@mkdir -p "$(CLAUDE_DIR)/skills/commit"
+	@if [ -f "$(CLAUDE_DIR)/settings.json" ] && [ ! -L "$(CLAUDE_DIR)/settings.json" ]; then \
+		echo "Backing up existing Claude settings to settings.json.bak"; \
+		mv "$(CLAUDE_DIR)/settings.json" "$(CLAUDE_DIR)/settings.json.bak"; \
+	fi
+	ln -sf $(DOTFILES_DIR)claude/settings.json "$(CLAUDE_DIR)/settings.json"
+	ln -sf $(DOTFILES_DIR)claude/statusline_command.sh "$(CLAUDE_DIR)/statusline_command.sh"
+	ln -sf $(DOTFILES_DIR)claude/skills/commit/SKILL.md "$(CLAUDE_DIR)/skills/commit/SKILL.md"
+
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom
 	stow -d $(STOW_DIR) -t $(HOME)/.config -D config
 	rm -f "$(VSCODE_DIR)/settings.json"
+	rm -f "$(CLAUDE_DIR)/settings.json"
+	rm -f "$(CLAUDE_DIR)/statusline_command.sh"
+	rm -f "$(CLAUDE_DIR)/skills/commit/SKILL.md"
 
 vscode-extensions:
 	@cat $(DOTFILES_DIR)install/Codefile | while read ext; do \

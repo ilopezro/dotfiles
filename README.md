@@ -9,6 +9,7 @@ Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](h
 - [Oh My Zsh](https://ohmyz.sh) with plugins
 - [VS Code](https://code.visualstudio.com) (extensions: [Codefile](./install/Codefile))
 - [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air)
+- [Claude Code](https://claude.ai/claude-code) (settings, statusline, skills)
 
 ## Fresh Install
 
@@ -36,7 +37,7 @@ cd ~/dotfiles && make
 
 Running `make` is idempotent — it's safe to run multiple times.
 
-This will install Homebrew packages, cask apps, Oh My Zsh (with plugins), symlink configs, install asdf plugins and runtimes, install Go tools, and install VS Code extensions.
+This will install Homebrew packages, cask apps, Oh My Zsh (with plugins), symlink configs, install asdf plugins and runtimes, install Go tools, install VS Code extensions, and link Claude Code settings and skills.
 
 ## Post-Install
 
@@ -56,6 +57,17 @@ Populate a file for tokens and secrets (not committed):
 ```sh
 touch ~/dotfiles/system/.exports
 # Example: export GITHUB_TOKEN=abc
+```
+
+Create `~/.claude/settings.local.json` for machine-specific Claude Code settings (plugins, effort level, etc.):
+
+```sh
+cat > ~/.claude/settings.local.json << 'EOF'
+{
+  "enabledPlugins": {},
+  "effortLevel": "medium"
+}
+EOF
 ```
 
 Log into apps: 1Password, Arc, Slack, Spotify, Docker, etc.
@@ -94,7 +106,8 @@ make cask-apps          # Install cask apps from Caskfile
 make oh-my-zsh          # Install Oh My Zsh and plugins
 make asdf-plugins       # Install asdf plugins and runtimes from .tool-versions
 make go-tools           # Install Go tools (gopls)
-make link               # Symlink all dotfiles via stow
+make link               # Symlink all dotfiles via stow + individual links
+make link-claude        # Link Claude Code settings, statusline, and skills
 make unlink             # Remove symlinked dotfiles
 make vscode-extensions  # Install VS Code extensions from Codefile
 ```
@@ -109,6 +122,8 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **Functions**: Edit `system/.function`
 - **Environment variables**: Edit `system/.env`
 - **PATH**: Edit `system/.path`
+- **Claude Code settings**: Edit `claude/settings.json` (shared), `~/.claude/settings.local.json` (machine-specific)
+- **Claude Code skills**: Add to `claude/skills/`
 
 ## Credits
 

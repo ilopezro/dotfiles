@@ -24,6 +24,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Brewfile` — Homebrew packages
 - `install/Caskfile` — Homebrew cask apps
 - `install/Codefile` — VS Code extensions
+- `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `make link-claude`, not stowed)
 
 ## Stow layout
 
