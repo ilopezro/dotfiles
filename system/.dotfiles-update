@@ -52,7 +52,7 @@ _dotfiles_update() {
   [[ "$option" = $'\n' ]] || echo
   case "$option" in
     [yY$'\n'])
-      dot update
+      "$HOME/dotfiles/bin/dot" update
       ;;
     [nN]|*)
       echo "[dotfiles] Run \`dot update\` whenever you're ready."
