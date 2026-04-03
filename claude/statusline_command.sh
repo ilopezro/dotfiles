@@ -34,8 +34,27 @@ cost_fmt=$(printf '$%.2f' "${cost:-0}")
 if [ -n "$used" ] && [ -n "$remaining" ]; then
   used_int=$(printf "%.0f" "$used")
   remaining_int=$(printf "%.0f" "$remaining")
+
+  # Color-code used percentage: 0-20 green, 21-50 yellow, 51-100 red
+  if [ "$used_int" -le 20 ]; then
+    USED_COLOR="$GREEN"
+  elif [ "$used_int" -le 50 ]; then
+    USED_COLOR="$YELLOW"
+  else
+    USED_COLOR="$RED"
+  fi
+
+  # Color-code remaining percentage (inverse of used): 80-100 green, 50-79 yellow, 0-49 red
+  if [ "$remaining_int" -ge 80 ]; then
+    REMAINING_COLOR="$GREEN"
+  elif [ "$remaining_int" -ge 50 ]; then
+    REMAINING_COLOR="$YELLOW"
+  else
+    REMAINING_COLOR="$RED"
+  fi
+
   bar=$(build_bar "$used_int")
-  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${YELLOW}%s${BLUE}]${RESET} ${RED}%s%%${RESET} used / ${GREEN}%s%%${RESET} remaining  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" \
+  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${USED_COLOR}%s${BLUE}]${RESET} ${USED_COLOR}%s%%${RESET} used / ${REMAINING_COLOR}%s%%${RESET} remaining  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" \
     "$model" "$bar" "$used_int" "$remaining_int" "$cost_fmt"
 else
   printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${YELLOW}-------------------${BLUE}]${RESET} no usage yet  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" "$model" "$cost_fmt"
