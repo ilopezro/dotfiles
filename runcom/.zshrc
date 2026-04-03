@@ -9,10 +9,11 @@ COMPLETION_WAITING_DOTS="true"
 
 plugins=(git asdf zsh-autosuggestions zsh-syntax-highlighting)
 
+# fpath must be set before OMZ sources compinit
+fpath=($HOME/dotfiles/completions /opt/homebrew/share/zsh/site-functions ${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+
 source $ZSH/oh-my-zsh.sh
 
-fpath=($HOME/dotfiles/completions /opt/homebrew/share/zsh/site-functions ${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
-autoload -Uz compinit && compinit
 zstyle ':completion:*' menu select
 
 # Source dotfiles system config
