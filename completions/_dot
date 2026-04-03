@@ -4,9 +4,9 @@ _dot() {
   local -a commands
   commands=(
     'install:Install packages from Brewfile and Caskfile'
-    'update:Update packages and oh-my-zsh'
+    'update:Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions'
     'clean:Clean up caches (brew, gem)'
-    'edit:Open dotfiles in editor'
+    'edit:Open dotfiles in VS Code'
     'help:Show help message'
   )
   _describe 'command' commands
