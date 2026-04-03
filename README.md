@@ -59,17 +59,6 @@ touch ~/dotfiles/system/.exports
 # Example: export GITHUB_TOKEN=abc
 ```
 
-Create `~/.claude/settings.local.json` for machine-specific Claude Code settings (plugins, effort level, etc.):
-
-```sh
-cat > ~/.claude/settings.local.json << 'EOF'
-{
-  "enabledPlugins": {},
-  "effortLevel": "medium"
-}
-EOF
-```
-
 Log into apps: 1Password, Arc, Slack, Spotify, Docker, etc.
 
 ## Keeping Up to Date
@@ -122,7 +111,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **Functions**: Edit `system/.function`
 - **Environment variables**: Edit `system/.env`
 - **PATH**: Edit `system/.path`
-- **Claude Code settings**: Edit `claude/settings.json` (shared), `~/.claude/settings.local.json` (machine-specific)
+- **Claude Code settings**: Edit `claude/settings.json`
 - **Claude Code skills**: Add to `claude/skills/`
 
 ## Credits
