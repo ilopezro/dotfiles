@@ -93,6 +93,7 @@ link-claude:
 	ln -sf $(DOTFILES_DIR)claude/settings.json "$(CLAUDE_DIR)/settings.json"
 	ln -sf $(DOTFILES_DIR)claude/statusline_command.sh "$(CLAUDE_DIR)/statusline_command.sh"
 	ln -sf $(DOTFILES_DIR)claude/skills/commit/SKILL.md "$(CLAUDE_DIR)/skills/commit/SKILL.md"
+	ln -sf $(DOTFILES_DIR)claude/CLAUDE.md "$(CLAUDE_DIR)/CLAUDE.md"
 
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom
