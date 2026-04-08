@@ -7,7 +7,7 @@
 
 ## Pull requests
 
-When opening a PR, check for a `.github/pull_request_template.md` in the repo and use it. If none exists, use this structure:
+When opening a PR, always open it in draft mode. Check for a `.github/pull_request_template.md` in the repo and use it. If none exists, use this structure:
 
 ```markdown
 ## Summary
