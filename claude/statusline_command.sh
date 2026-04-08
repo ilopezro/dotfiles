@@ -7,6 +7,8 @@ used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 model=$(echo "$input" | jq -r '.model.display_name // empty')
 cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
+rate_5h=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+rate_7d=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 # Colors (robbyrussell theme)
 GREEN='\033[1;32m'
@@ -30,6 +32,28 @@ build_bar() {
 }
 
 cost_fmt=$(printf '$%.2f' "${cost:-0}")
+
+# Build rate limit string with color thresholds (same as context: <=20 green, <=50 yellow, else red)
+rate_color() {
+  local pct="$1"
+  if [ "$pct" -le 20 ]; then echo "$GREEN"
+  elif [ "$pct" -le 50 ]; then echo "$YELLOW"
+  else echo "$RED"
+  fi
+}
+
+rate_info=""
+if [ -n "$rate_5h" ]; then
+  r5=$(printf "%.0f" "$rate_5h")
+  c=$(rate_color "$r5")
+  rate_info="${rate_info}${BLUE}5h:${RESET}${c}${r5}%${RESET}"
+fi
+if [ -n "$rate_7d" ]; then
+  r7=$(printf "%.0f" "$rate_7d")
+  c=$(rate_color "$r7")
+  [ -n "$rate_info" ] && rate_info="${rate_info} "
+  rate_info="${rate_info}${BLUE}7d:${RESET}${c}${r7}%${RESET}"
+fi
 
 if [ -n "$used" ] && [ -n "$remaining" ]; then
   used_int=$(printf "%.0f" "$used")
@@ -56,6 +80,14 @@ if [ -n "$used" ] && [ -n "$remaining" ]; then
   bar=$(build_bar "$used_int")
   printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${USED_COLOR}%s${BLUE}]${RESET} ${USED_COLOR}%s%%${RESET} used / ${REMAINING_COLOR}%s%%${RESET} remaining  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" \
     "$model" "$bar" "$used_int" "$remaining_int" "$cost_fmt"
+  if [ -n "$rate_info" ]; then
+    printf "  ${BLUE}|${RESET}  "
+    printf "%b" "$rate_info"
+  fi
 else
   printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${YELLOW}-------------------${BLUE}]${RESET} no usage yet  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" "$model" "$cost_fmt"
+  if [ -n "$rate_info" ]; then
+    printf "  ${BLUE}|${RESET}  "
+    printf "%b" "$rate_info"
+  fi
 fi
