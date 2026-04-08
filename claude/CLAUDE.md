@@ -7,7 +7,7 @@
 
 ## Pull requests
 
-When opening a PR, always open it in draft mode. Check for a `.github/pull_request_template.md` in the repo and use it. If none exists, use this structure:
+When opening a PR, always open it in draft mode. Before creating it, ask if there is a ticket number — if not, omit the Ticket section. Check for a `.github/pull_request_template.md` in the repo and use it. If none exists, use this structure:
 
 ```markdown
 ## Summary
