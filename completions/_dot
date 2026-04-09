@@ -5,6 +5,7 @@ _dot() {
   commands=(
     'install:Install packages from Brewfile and Caskfile'
     'update:Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions'
+    'health:Check symlinks, required tools, and asdf runtimes'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'
     'help:Show help message'

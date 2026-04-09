@@ -8,6 +8,7 @@ sub_help() {
   echo "Commands:"
   echo "  install   Install packages from Brewfile and Caskfile (initial setup)"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions"
+  echo "  health    Check symlinks, required tools, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -43,6 +44,44 @@ sub_update() {
   echo "Done!"
 }
 
+sub_health() {
+  local ok=1
+
+  _check() {
+    local label="$1" result="$2"
+    if [ "$result" = "ok" ]; then
+      printf "  ✓ %s\n" "$label"
+    else
+      printf "  ✗ %s (%s)\n" "$label" "$result"
+      ok=0
+    fi
+  }
+
+  echo "Symlinks"
+  [ -L "$HOME/.zshrc" ]                && _check ".zshrc"               ok || _check ".zshrc"               "not linked"
+  [ -L "$HOME/.tool-versions" ]        && _check ".tool-versions"        ok || _check ".tool-versions"        "not linked"
+  [ -L "$HOME/.claude/settings.json" ] && _check "claude/settings.json" ok || _check "claude/settings.json" "not linked"
+
+  echo ""
+  echo "Tools"
+  for cmd in brew git stow asdf code; do
+    command -v "$cmd" >/dev/null 2>&1 && _check "$cmd" ok || _check "$cmd" "not found"
+  done
+
+  echo ""
+  echo "asdf runtimes"
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    name=$(echo "$line" | awk '{print $1}')
+    version=$(echo "$line" | awk '{print $2}')
+    installed=$(asdf list "$name" 2>/dev/null | grep -F "$version")
+    [ -n "$installed" ] && _check "$name $version" ok || _check "$name $version" "not installed"
+  done < "$DOTFILES_DIR/runcom/.tool-versions"
+
+  echo ""
+  [ "$ok" = "1" ] && echo "All checks passed." || echo "Some checks failed. Run \`dot install\` or \`make link\` to fix."
+}
+
 sub_clean() {
   echo "Cleaning Homebrew cache..."
   brew cleanup
@@ -58,6 +97,7 @@ sub_edit() {
 case "$1" in
   install) sub_install ;;
   update)  sub_update ;;
+  health)  sub_health ;;
   clean)   sub_clean ;;
   edit)    sub_edit ;;
   help)    sub_help ;;

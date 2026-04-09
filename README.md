@@ -82,6 +82,7 @@ dot update
 ```sh
 dot install   # Install packages from Brewfile and Caskfile (initial setup)
 dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions
+dot health    # Check symlinks, required tools, and asdf runtimes
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
