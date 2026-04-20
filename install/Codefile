@@ -10,6 +10,7 @@ ms-azuretools.vscode-containers
 ms-vscode.makefile-tools
 redhat.vscode-yaml
 rvest.vs-code-prettier-eslint
+stylelint.vscode-stylelint
 shopify.ruby-lsp
 vitest.explorer
 vscodevim.vim
