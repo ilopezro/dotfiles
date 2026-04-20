@@ -61,6 +61,7 @@ sub_health() {
   [ -L "$HOME/.zshrc" ]                && _check ".zshrc"               ok || _check ".zshrc"               "not linked"
   [ -L "$HOME/.tool-versions" ]        && _check ".tool-versions"        ok || _check ".tool-versions"        "not linked"
   [ -L "$HOME/.claude/settings.json" ] && _check "claude/settings.json" ok || _check "claude/settings.json" "not linked"
+  [ -L "$HOME/Library/Application Support/Code/User/settings.json" ] && _check "vscode/settings.json" ok || _check "vscode/settings.json" "not linked"
 
   echo ""
   echo "Tools"
