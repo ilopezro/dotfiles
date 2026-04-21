@@ -21,5 +21,6 @@
         "ui.semanticTokens": true
     },
     "claudeCode.preferredLocation": "panel",
-    "eslint.useFlatConfig": true
+    "eslint.useFlatConfig": true,
+    "terminal.integrated.environmentChangesRelaunch": true
 }
