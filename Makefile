@@ -70,6 +70,14 @@ oh-my-zsh:
 link: stow-runcom stow-config link-vscode link-claude
 
 stow-runcom:
+	@for file in .zshrc .tool-versions; do \
+		target="$(HOME)/$$file"; \
+		if [ -e "$$target" ] && [ ! -L "$$target" ]; then \
+			backup="$$target.bak.$$(date +%Y%m%d%H%M%S)"; \
+			echo "Backing up existing $$target to $$backup"; \
+			mv "$$target" "$$backup"; \
+		fi; \
+	done
 	stow -d $(STOW_DIR) -t $(HOME) runcom
 
 stow-config:
