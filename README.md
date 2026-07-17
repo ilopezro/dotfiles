@@ -8,7 +8,7 @@ Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](h
 - [Homebrew Cask](https://github.com/Homebrew/homebrew-cask) (apps: [Caskfile](./install/Caskfile))
 - [Oh My Zsh](https://ohmyz.sh) with plugins
 - [VS Code](https://code.visualstudio.com) (extensions: [Codefile](./install/Codefile))
-- [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air)
+- [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air, uv)
 - [Claude Code](https://claude.ai/claude-code) (settings, statusline, skills)
 
 ## Fresh Install
