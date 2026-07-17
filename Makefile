@@ -70,7 +70,7 @@ oh-my-zsh:
 link: stow-runcom stow-config link-vscode link-claude
 
 stow-runcom:
-	@for file in .zshrc .tool-versions; do \
+	@for file in .zshrc .tool-versions .asdfrc; do \
 		target="$(HOME)/$$file"; \
 		if [ -e "$$target" ] && [ ! -L "$$target" ]; then \
 			backup="$$target.bak.$$(date +%Y%m%d%H%M%S)"; \

@@ -22,5 +22,6 @@
     },
     "claudeCode.preferredLocation": "panel",
     "eslint.useFlatConfig": true,
-    "terminal.integrated.environmentChangesRelaunch": true
+    "terminal.integrated.environmentChangesRelaunch": true,
+    "python.analysis.typeCheckingMode": "standard"
 }
