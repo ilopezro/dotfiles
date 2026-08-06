@@ -23,5 +23,16 @@
     "claudeCode.preferredLocation": "panel",
     "eslint.useFlatConfig": true,
     "terminal.integrated.environmentChangesRelaunch": true,
-    "python.analysis.typeCheckingMode": "standard"
+    "python.analysis.typeCheckingMode": "standard",
+    "yaml.disableSchemaDetection": [
+        "**/.github/workflows/*.yml",
+        "**/.github/workflows/*.yaml",
+        "**/.gitea/workflows/*.yml",
+        "**/.gitea/workflows/*.yaml",
+        "**/.forgejo/workflows/*.yml",
+        "**/.forgejo/workflows/*.yaml"
+    ],
+    "workbench.editorAssociations": {
+        "*.md": "default"
+    }
 }

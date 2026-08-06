@@ -3,8 +3,8 @@
 _dot() {
   local -a commands
   commands=(
-    'install:Install packages from Brewfile and Caskfile'
-    'update:Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions'
+    'install:Install packages from Brewfile, Caskfile, Masfile, and Npmfile'
+    'update:Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools'
     'health:Check symlinks, required tools, and asdf runtimes'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'

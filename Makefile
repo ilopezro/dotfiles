@@ -4,11 +4,11 @@ VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 CLAUDE_DIR := $(HOME)/.claude
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps oh-my-zsh safe-chain asdf-plugins go-tools link unlink vscode-extensions
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp
 
 all: macos
 
-macos: sudo packages oh-my-zsh safe-chain link asdf-plugins go-tools vscode-extensions
+macos: sudo packages oh-my-zsh safe-chain link asdf-plugins go-tools npm-tools vscode-extensions claude-mcp
 
 sudo:
 	sudo -v
@@ -18,13 +18,20 @@ brew:
 	is-macos && command -v brew >/dev/null 2>&1 || \
 		/bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-packages: brew-packages cask-apps
+packages: brew-packages cask-apps mas-apps
 
 brew-packages: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Brewfile
 
 cask-apps: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
+
+mas-apps: brew-packages
+	@while IFS='|' read -r name id; do \
+		[ -z "$$name" ] && continue; \
+		echo "Installing $$name..."; \
+		mas install "$$id" || true; \
+	done < $(DOTFILES_DIR)install/Masfile
 
 safe-chain:
 	@if ! command -v safe-chain >/dev/null 2>&1; then \
@@ -46,6 +53,13 @@ asdf-plugins:
 go-tools:
 	go install golang.org/x/tools/gopls@latest
 	@asdf reshim golang
+
+npm-tools:
+	@cat $(DOTFILES_DIR)install/Npmfile | while read pkg; do \
+		[ -z "$$pkg" ] && continue; \
+		npm install -g "$$pkg"; \
+	done
+	@asdf reshim nodejs
 
 oh-my-zsh:
 	@if [ ! -d "$(HOME)/.oh-my-zsh" ]; then \
@@ -102,6 +116,17 @@ link-claude:
 	ln -sf $(DOTFILES_DIR)claude/statusline_command.sh "$(CLAUDE_DIR)/statusline_command.sh"
 	ln -sf $(DOTFILES_DIR)claude/skills/commit/SKILL.md "$(CLAUDE_DIR)/skills/commit/SKILL.md"
 	ln -sf $(DOTFILES_DIR)claude/CLAUDE.md "$(CLAUDE_DIR)/CLAUDE.md"
+
+claude-mcp:
+	@while IFS='|' read -r name cmd; do \
+		[ -z "$$name" ] && continue; \
+		if claude mcp get "$$name" >/dev/null 2>&1; then \
+			echo "MCP server already configured: $$name"; \
+		else \
+			echo "Adding MCP server: $$name"; \
+			claude mcp add --scope user "$$name" -- $$cmd; \
+		fi; \
+	done < $(DOTFILES_DIR)install/Mcpfile
 
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom

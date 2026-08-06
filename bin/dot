@@ -6,8 +6,8 @@ sub_help() {
   echo "Usage: dot <command>"
   echo ""
   echo "Commands:"
-  echo "  install   Install packages from Brewfile and Caskfile (initial setup)"
-  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, and VS Code extensions"
+  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, and MCP servers from Mcpfile (initial setup)"
+  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools"
   echo "  health    Check symlinks, required tools, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
@@ -20,25 +20,55 @@ sub_install() {
 
   echo "Installing cask apps..."
   brew bundle --file="$DOTFILES_DIR/install/Caskfile"
+
+  echo "Installing Mac App Store apps..."
+  while IFS='|' read -r name id; do
+    [ -z "$name" ] && continue
+    echo "  Installing $name..."
+    mas install "$id" || true
+  done < "$DOTFILES_DIR/install/Masfile"
+
+  echo "Installing global npm tools..."
+  cat "$DOTFILES_DIR/install/Npmfile" | while read pkg; do
+    [ -z "$pkg" ] && continue
+    npm install -g "$pkg"
+  done
+
+  echo "Configuring Claude Code MCP servers..."
+  while IFS='|' read -r name cmd; do
+    [ -z "$name" ] && continue
+    if claude mcp get "$name" >/dev/null 2>&1; then
+      echo "  MCP server already configured: $name"
+    else
+      echo "  Adding MCP server: $name"
+      claude mcp add --scope user "$name" -- $cmd
+    fi
+  done < "$DOTFILES_DIR/install/Mcpfile"
 }
 
 sub_update() {
-  echo "[1/4] Updating dotfiles..."
+  echo "[1/5] Updating dotfiles..."
   if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
     git -C "$DOTFILES_DIR" pull
   else
     echo "  Skipping: you have local changes in $DOTFILES_DIR"
   fi
 
-  echo "[2/4] Updating Homebrew..."
+  echo "[2/5] Updating Homebrew..."
   brew update && brew upgrade
 
-  echo "[3/4] Updating Oh My Zsh..."
+  echo "[3/5] Updating Oh My Zsh..."
   "$ZSH/tools/upgrade.sh"
 
-  echo "[4/4] Updating VS Code extensions..."
+  echo "[4/5] Updating VS Code extensions..."
   cat "$DOTFILES_DIR/install/Codefile" | while read ext; do
     code --install-extension "$ext" --force 2>/dev/null || true
+  done
+
+  echo "[5/5] Updating global npm tools..."
+  cat "$DOTFILES_DIR/install/Npmfile" | while read pkg; do
+    [ -z "$pkg" ] && continue
+    npm install -g "$pkg"
   done
 
   echo "Done!"
@@ -66,9 +96,30 @@ sub_health() {
 
   echo ""
   echo "Tools"
-  for cmd in brew git stow asdf code; do
+  for cmd in brew git stow asdf code mas; do
     command -v "$cmd" >/dev/null 2>&1 && _check "$cmd" ok || _check "$cmd" "not found"
   done
+
+  echo ""
+  echo "Global npm tools"
+  while IFS= read -r pkg; do
+    [ -z "$pkg" ] && continue
+    npm list -g --depth=0 "$pkg" >/dev/null 2>&1 && _check "$pkg" ok || _check "$pkg" "not installed"
+  done < "$DOTFILES_DIR/install/Npmfile"
+
+  echo ""
+  echo "Mac App Store apps"
+  while IFS='|' read -r name id; do
+    [ -z "$name" ] && continue
+    mas list 2>/dev/null | grep -q "^$id " && _check "$name" ok || _check "$name" "not installed"
+  done < "$DOTFILES_DIR/install/Masfile"
+
+  echo ""
+  echo "Claude Code MCP servers"
+  while IFS='|' read -r name cmd; do
+    [ -z "$name" ] && continue
+    claude mcp get "$name" >/dev/null 2>&1 && _check "$name" ok || _check "$name" "not configured"
+  done < "$DOTFILES_DIR/install/Mcpfile"
 
   echo ""
   echo "asdf runtimes"

@@ -19,6 +19,7 @@ Always update the `sub_health` function in `bin/dot` when:
 - A new symlink is added or removed via `make link` or `make link-claude`
 - A new required tool is added to the setup (brew, stow, asdf, etc.)
 - A new asdf runtime is added to `runcom/.tool-versions`
+- A new Mac App Store app is added to `install/Masfile`
 
 ## README
 
@@ -39,7 +40,10 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `system/.dotfiles-update` — auto-update check, runs every 13 days
 - `install/Brewfile` — Homebrew packages
 - `install/Caskfile` — Homebrew cask apps
+- `install/Masfile` — Mac App Store apps (`name|id` per line, installed via `mas`, requires the `mas` brew and being signed into the App Store)
 - `install/Codefile` — VS Code extensions
+- `install/Npmfile` — global npm packages
+- `install/Mcpfile` — Claude Code MCP servers (`name|command` per line, registered at user scope via `claude mcp add`)
 - `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `make link-claude`, not stowed)
 
 ## Stow layout
