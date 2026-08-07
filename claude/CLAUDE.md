@@ -25,6 +25,8 @@ When opening a PR, always open it in draft mode. The PR title must follow the co
 <!-- Include instructions on how to test this work, if applicable -->
 ```
 
+Keep the PR description current: after every commit or chunk of work pushed to a branch with an open PR, update the description so it accurately reflects the work as it stands — especially the Description and How to Test/Intended Behavior sections. Don't let it drift from the actual diff.
+
 ## Code style
 
 - Only add comments where the logic isn't self-evident — avoid restating what the code already says
