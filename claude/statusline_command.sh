@@ -9,6 +9,8 @@ model=$(echo "$input" | jq -r '.model.display_name // empty')
 cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 rate_5h=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 rate_7d=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+reset_5h=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+reset_7d=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 
 # Colors (robbyrussell theme)
 GREEN='\033[1;32m'
@@ -42,17 +44,35 @@ rate_color() {
   fi
 }
 
+# Format seconds-until-reset as a compact countdown (e.g. 3d4h, 2h13m, 45m)
+fmt_until() {
+  local target="$1"
+  local now diff d h m
+  now=$(date +%s)
+  diff=$(( target - now ))
+  [ "$diff" -lt 0 ] && diff=0
+  d=$(( diff / 86400 ))
+  h=$(( (diff % 86400) / 3600 ))
+  m=$(( (diff % 3600) / 60 ))
+  if [ "$d" -gt 0 ]; then printf '%dd%dh' "$d" "$h"
+  elif [ "$h" -gt 0 ]; then printf '%dh%dm' "$h" "$m"
+  else printf '%dm' "$m"
+  fi
+}
+
 rate_info=""
 if [ -n "$rate_5h" ]; then
   r5=$(printf "%.0f" "$rate_5h")
   c=$(rate_color "$r5")
   rate_info="${rate_info}${BLUE}5h:${RESET}${c}${r5}%${RESET}"
+  [ -n "$reset_5h" ] && rate_info="${rate_info} ${CYAN}($(fmt_until "$reset_5h"))${RESET}"
 fi
 if [ -n "$rate_7d" ]; then
   r7=$(printf "%.0f" "$rate_7d")
   c=$(rate_color "$r7")
   [ -n "$rate_info" ] && rate_info="${rate_info} "
   rate_info="${rate_info}${BLUE}7d:${RESET}${c}${r7}%${RESET}"
+  [ -n "$reset_7d" ] && rate_info="${rate_info} ${CYAN}($(fmt_until "$reset_7d"))${RESET}"
 fi
 
 if [ -n "$used" ] && [ -n "$remaining" ]; then
