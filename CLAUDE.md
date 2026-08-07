@@ -19,6 +19,7 @@ Always update the `sub_health` function in `bin/dot` when:
 - A new symlink is added or removed via `make link` or `make link-claude`
 - A new required tool is added to the setup (brew, stow, asdf, etc.)
 - A new asdf runtime is added to `runcom/.tool-versions`
+- The commit-signing setup changes (`config/git/allowed_signers`, `make signers`)
 - A new Mac App Store app is added to `install/Masfile`
 
 ## README
@@ -46,6 +47,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Mcpfile` — Claude Code MCP servers (`name|command` per line, registered at user scope via `claude mcp add`)
 - `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `make link-claude`, not stowed)
 - `config/ghostty/config` — Ghostty terminal config, stowed to `~/.config/ghostty/config`
+- `config/git/allowed_signers` — shared SSH signature-verification allowlist, one `identities key` line per machine. The *signing* key is per-machine and lives in the gitignored `~/.config/git/local`; this file is the union of every machine's public key and is committed. `make signers` appends the current machine's key idempotently.
 
 ## Stow layout
 

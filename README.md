@@ -39,7 +39,7 @@ cd ~/dotfiles && make
 
 Running `make` is idempotent — it's safe to run multiple times.
 
-This will install Homebrew packages, cask apps, Mac App Store apps, Oh My Zsh (with plugins), symlink configs, install asdf plugins and runtimes, install Go tools, install global npm tools, install VS Code extensions, link Claude Code settings and skills, and register Claude Code MCP servers.
+This will install Homebrew packages, cask apps, Mac App Store apps, Oh My Zsh (with plugins), symlink configs, register this machine's SSH signing key, install asdf plugins and runtimes, install Go tools, install global npm tools, install VS Code extensions, link Claude Code settings and skills, and register Claude Code MCP servers.
 
 ## Post-Install
 
@@ -52,6 +52,14 @@ cat > ~/.config/git/local << 'EOF'
 	email = your@email.com
 	signingkey = ~/.ssh/id_ed25519.pub
 EOF
+```
+
+Commits and tags are signed with your SSH key. `config/git/allowed_signers` is the shared allowlist used to *verify* those signatures, so it needs the public key of every machine you sign from. `make signers` (part of `make`) appends this machine's key if it's missing — commit and push the change so your other machines trust it too:
+
+```sh
+make signers
+git -C ~/dotfiles add config/git/allowed_signers
+git -C ~/dotfiles commit -m "chore: trust <machine> signing key"
 ```
 
 Populate a file for tokens and secrets (not committed):
@@ -86,7 +94,7 @@ dot update
 ```sh
 dot install   # Install packages from Brewfile, Caskfile, and Npmfile, and MCP servers from Mcpfile (initial setup)
 dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools
-dot health    # Check symlinks, required tools, and asdf runtimes
+dot health    # Check symlinks, commit signing, required tools, and asdf runtimes
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
@@ -104,6 +112,7 @@ make asdf-plugins       # Install asdf plugins and runtimes from .tool-versions
 make go-tools           # Install Go tools (gopls)
 make npm-tools          # Install global npm packages from Npmfile
 make link               # Symlink all dotfiles via stow + individual links
+make signers            # Add this machine's SSH signing key to config/git/allowed_signers
 make link-claude        # Link Claude Code settings, statusline, and skills
 make claude-mcp         # Register Claude Code MCP servers from Mcpfile
 make unlink             # Remove symlinked dotfiles
@@ -125,6 +134,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **PATH**: Edit `system/.path`
 - **Claude Code settings**: Edit `claude/settings.json`
 - **Claude Code skills**: Add to `claude/skills/`
+- **Trusted signing keys**: Run `make signers` on a new machine, then commit `config/git/allowed_signers`
 - **Ghostty terminal**: Edit `config/ghostty/config` (stowed to `~/.config/ghostty/config`); reload in-app with `Cmd+Shift+,`
 
 ## Credits

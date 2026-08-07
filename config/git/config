@@ -17,3 +17,5 @@
 	excludesfile = ~/.config/git/ignore
 [include]
 	path = ~/.config/git/local
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers

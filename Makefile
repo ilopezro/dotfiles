@@ -2,13 +2,14 @@ DOTFILES_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 CLAUDE_DIR := $(HOME)/.claude
+SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp signers
 
 all: macos
 
-macos: sudo packages oh-my-zsh safe-chain link asdf-plugins go-tools npm-tools vscode-extensions claude-mcp
+macos: sudo packages oh-my-zsh safe-chain link signers asdf-plugins go-tools npm-tools vscode-extensions claude-mcp
 
 sudo:
 	sudo -v
@@ -116,6 +117,27 @@ link-claude:
 	ln -sf $(DOTFILES_DIR)claude/statusline_command.sh "$(CLAUDE_DIR)/statusline_command.sh"
 	ln -sf $(DOTFILES_DIR)claude/skills/commit/SKILL.md "$(CLAUDE_DIR)/skills/commit/SKILL.md"
 	ln -sf $(DOTFILES_DIR)claude/CLAUDE.md "$(CLAUDE_DIR)/CLAUDE.md"
+
+signers:
+	@key_path="$$(git config user.signingkey)"; \
+	key_path="$${key_path:-$(HOME)/.ssh/id_ed25519.pub}"; \
+	case "$$key_path" in "~"*) key_path="$(HOME)$${key_path#\~}";; esac; \
+	if [ ! -f "$$key_path" ]; then \
+		echo "No public key at $$key_path, skipping allowed_signers."; \
+		exit 0; \
+	fi; \
+	key="$$(awk '{print $$1" "$$2}' "$$key_path")"; \
+	if grep -qF "$$key" "$(SIGNERS_FILE)" 2>/dev/null; then \
+		echo "allowed_signers already trusts this machine's key."; \
+	else \
+		ids="$$(head -n1 "$(SIGNERS_FILE)" 2>/dev/null | cut -d' ' -f1)"; \
+		[ -n "$$ids" ] || ids="$$(git config user.email)"; \
+		if [ -s "$(SIGNERS_FILE)" ] && [ -n "$$(tail -c1 "$(SIGNERS_FILE)")" ]; then \
+			echo "" >> "$(SIGNERS_FILE)"; \
+		fi; \
+		echo "$$ids $$key" >> "$(SIGNERS_FILE)"; \
+		echo "Added this machine's key to allowed_signers — commit and push it to trust this machine elsewhere."; \
+	fi
 
 claude-mcp:
 	@while IFS='|' read -r name cmd; do \

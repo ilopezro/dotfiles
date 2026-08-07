@@ -8,7 +8,7 @@ sub_help() {
   echo "Commands:"
   echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, and MCP servers from Mcpfile (initial setup)"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools"
-  echo "  health    Check symlinks, required tools, and asdf runtimes"
+  echo "  health    Check symlinks, commit signing, required tools, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -93,6 +93,20 @@ sub_health() {
   [ -L "$HOME/.asdfrc" ]               && _check ".asdfrc"               ok || _check ".asdfrc"               "not linked"
   [ -L "$HOME/.claude/settings.json" ] && _check "claude/settings.json" ok || _check "claude/settings.json" "not linked"
   [ -L "$HOME/Library/Application Support/Code/User/settings.json" ] && _check "vscode/settings.json" ok || _check "vscode/settings.json" "not linked"
+
+  echo ""
+  echo "Commit signing"
+  key_path="$(git config user.signingkey)"
+  key_path="${key_path:-$HOME/.ssh/id_ed25519.pub}"
+  case "$key_path" in "~"*) key_path="$HOME${key_path#\~}" ;; esac
+  if [ ! -f "$key_path" ]; then
+    _check "signing key" "no key at $key_path"
+  else
+    key=$(awk '{print $1" "$2}' "$key_path")
+    grep -qF "$key" "$DOTFILES_DIR/config/git/allowed_signers" 2>/dev/null \
+      && _check "key trusted in allowed_signers" ok \
+      || _check "key trusted in allowed_signers" "run \`make signers\`"
+  fi
 
   echo ""
   echo "Tools"
