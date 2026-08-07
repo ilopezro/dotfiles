@@ -1,0 +1,31 @@
+# Ghostty configuration
+# Docs: `ghostty +show-config --default --docs | less`
+# Reload in-app with Cmd+Shift+,
+
+# --- Font ---
+font-family = "JetBrains Mono"
+font-size = 14
+font-thicken = true
+
+# --- Theme (auto light/dark, follows macOS appearance) ---
+theme = dark:Catppuccin Mocha,light:Catppuccin Latte
+
+# --- Window ---
+background-opacity = 0.96
+background-blur-radius = 20
+window-padding-x = 10
+window-padding-y = 10
+macos-titlebar-style = tabs
+
+# --- Cursor & mouse ---
+cursor-style = block
+mouse-hide-while-typing = true
+
+# --- Behavior ---
+confirm-close-surface = false
+quit-after-last-window-closed = true
+
+# --- Keybindings ---
+keybind = cmd+d=new_split:right
+keybind = cmd+shift+d=new_split:down
+keybind = cmd+enter=toggle_fullscreen

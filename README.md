@@ -125,6 +125,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **PATH**: Edit `system/.path`
 - **Claude Code settings**: Edit `claude/settings.json`
 - **Claude Code skills**: Add to `claude/skills/`
+- **Ghostty terminal**: Edit `config/ghostty/config` (stowed to `~/.config/ghostty/config`); reload in-app with `Cmd+Shift+,`
 
 ## Credits
 

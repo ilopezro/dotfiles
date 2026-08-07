@@ -45,9 +45,10 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Npmfile` — global npm packages
 - `install/Mcpfile` — Claude Code MCP servers (`name|command` per line, registered at user scope via `claude mcp add`)
 - `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `make link-claude`, not stowed)
+- `config/ghostty/config` — Ghostty terminal config, stowed to `~/.config/ghostty/config`
 
 ## Stow layout
 
 - `runcom/` is stowed to `$HOME`
-- `config/` is stowed to `$HOME/.config`
+- `config/` is stowed to `$HOME/.config` (e.g. `git`, `ghostty`)
 - `system/` is sourced directly from `~/dotfiles/system/`, not stowed
