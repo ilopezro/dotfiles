@@ -5,11 +5,11 @@ CLAUDE_DIR := $(HOME)/.claude
 SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp signers
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp claude-plugins signers
 
 all: macos
 
-macos: sudo packages oh-my-zsh safe-chain link signers asdf-plugins go-tools npm-tools vscode-extensions claude-mcp
+macos: sudo packages oh-my-zsh safe-chain link signers asdf-plugins go-tools npm-tools vscode-extensions claude-mcp claude-plugins
 
 sudo:
 	sudo -v
@@ -149,6 +149,32 @@ claude-mcp:
 			claude mcp add --scope user "$$name" -- $$cmd; \
 		fi; \
 	done < $(DOTFILES_DIR)install/Mcpfile
+
+claude-plugins:
+	@if ! command -v claude >/dev/null 2>&1; then \
+		echo "claude not found, skipping plugins. Rerun \`make claude-plugins\` after Claude Code is installed."; \
+		exit 0; \
+	fi; \
+	while IFS='|' read -r plugin source; do \
+		[ -z "$$plugin" ] && continue; \
+		market="$${plugin#*@}"; \
+		if claude plugin marketplace list 2>/dev/null | grep -q "❯ $$market$$"; then \
+			echo "Marketplace already added: $$market"; \
+		else \
+			echo "Adding marketplace: $$source"; \
+			if ! claude plugin marketplace add "$$source"; then \
+				echo "  Skipping $$plugin: could not reach $$source (needs GitHub access — rerun \`make claude-plugins\` once SSH is set up)."; \
+				continue; \
+			fi; \
+		fi; \
+		if claude plugin list 2>/dev/null | grep -q "❯ $$plugin$$"; then \
+			echo "Plugin already installed: $$plugin"; \
+		else \
+			echo "Installing plugin: $$plugin"; \
+			claude plugin install --scope user "$$plugin" || \
+				echo "  Skipping $$plugin: install failed (rerun \`make claude-plugins\` to retry)."; \
+		fi; \
+	done < $(DOTFILES_DIR)install/Pluginfile
 
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom

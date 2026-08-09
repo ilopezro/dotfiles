@@ -6,9 +6,9 @@ sub_help() {
   echo "Usage: dot <command>"
   echo ""
   echo "Commands:"
-  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, and MCP servers from Mcpfile (initial setup)"
-  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools"
-  echo "  health    Check symlinks, commit signing, required tools, and asdf runtimes"
+  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
+  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
+  echo "  health    Check symlinks, commit signing, required tools, Claude Code plugins, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -44,32 +44,64 @@ sub_install() {
       claude mcp add --scope user "$name" -- $cmd
     fi
   done < "$DOTFILES_DIR/install/Mcpfile"
+
+  if ! command -v claude >/dev/null 2>&1; then
+    echo "Skipping Claude Code plugins: claude not found."
+  else
+    echo "Installing Claude Code plugins..."
+    while IFS='|' read -r plugin source; do
+      [ -z "$plugin" ] && continue
+      market="${plugin#*@}"
+      if claude plugin marketplace list 2>/dev/null | grep -q "❯ $market$"; then
+        echo "  Marketplace already added: $market"
+      else
+        echo "  Adding marketplace: $source"
+        if ! claude plugin marketplace add "$source"; then
+          echo "  Skipping $plugin: could not reach $source (needs GitHub access)."
+          continue
+        fi
+      fi
+      if claude plugin list 2>/dev/null | grep -q "❯ $plugin$"; then
+        echo "  Plugin already installed: $plugin"
+      else
+        echo "  Installing plugin: $plugin"
+        claude plugin install --scope user "$plugin" ||
+          echo "  Skipping $plugin: install failed."
+      fi
+    done < "$DOTFILES_DIR/install/Pluginfile"
+  fi
 }
 
 sub_update() {
-  echo "[1/5] Updating dotfiles..."
+  echo "[1/6] Updating dotfiles..."
   if git -C "$DOTFILES_DIR" diff --quiet && git -C "$DOTFILES_DIR" diff --cached --quiet; then
     git -C "$DOTFILES_DIR" pull
   else
     echo "  Skipping: you have local changes in $DOTFILES_DIR"
   fi
 
-  echo "[2/5] Updating Homebrew..."
+  echo "[2/6] Updating Homebrew..."
   brew update && brew upgrade
 
-  echo "[3/5] Updating Oh My Zsh..."
+  echo "[3/6] Updating Oh My Zsh..."
   "$ZSH/tools/upgrade.sh"
 
-  echo "[4/5] Updating VS Code extensions..."
+  echo "[4/6] Updating VS Code extensions..."
   cat "$DOTFILES_DIR/install/Codefile" | while read ext; do
     code --install-extension "$ext" --force 2>/dev/null || true
   done
 
-  echo "[5/5] Updating global npm tools..."
+  echo "[5/6] Updating global npm tools..."
   cat "$DOTFILES_DIR/install/Npmfile" | while read pkg; do
     [ -z "$pkg" ] && continue
     npm install -g "$pkg"
   done
+
+  echo "[6/6] Updating Claude Code plugins..."
+  while IFS='|' read -r plugin source; do
+    [ -z "$plugin" ] && continue
+    claude plugin update "$plugin" 2>/dev/null || true
+  done < "$DOTFILES_DIR/install/Pluginfile"
 
   echo "Done!"
 }
@@ -134,6 +166,13 @@ sub_health() {
     [ -z "$name" ] && continue
     claude mcp get "$name" >/dev/null 2>&1 && _check "$name" ok || _check "$name" "not configured"
   done < "$DOTFILES_DIR/install/Mcpfile"
+
+  echo ""
+  echo "Claude Code plugins"
+  while IFS='|' read -r plugin source; do
+    [ -z "$plugin" ] && continue
+    claude plugin list 2>/dev/null | grep -q "❯ $plugin$" && _check "$plugin" ok || _check "$plugin" "not installed"
+  done < "$DOTFILES_DIR/install/Pluginfile"
 
   echo ""
   echo "asdf runtimes"

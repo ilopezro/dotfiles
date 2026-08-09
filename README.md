@@ -11,7 +11,7 @@ Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](h
 - [VS Code](https://code.visualstudio.com) (extensions: [Codefile](./install/Codefile))
 - [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air, uv)
 - Global npm tools (packages: [Npmfile](./install/Npmfile))
-- [Claude Code](https://claude.ai/claude-code) (settings, statusline, skills, MCP servers: [Mcpfile](./install/Mcpfile))
+- [Claude Code](https://claude.ai/claude-code) (settings, statusline, skills, MCP servers: [Mcpfile](./install/Mcpfile), plugins: [Pluginfile](./install/Pluginfile))
 
 ## Fresh Install
 
@@ -92,9 +92,9 @@ dot update
 ### `dot` CLI
 
 ```sh
-dot install   # Install packages from Brewfile, Caskfile, and Npmfile, and MCP servers from Mcpfile (initial setup)
-dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, and npm tools
-dot health    # Check symlinks, commit signing, required tools, and asdf runtimes
+dot install   # Install packages from Brewfile, Caskfile, and Npmfile, MCP servers from Mcpfile, and plugins from Pluginfile (initial setup)
+dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
+dot health    # Check symlinks, commit signing, required tools, Claude Code plugins, and asdf runtimes
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
@@ -115,6 +115,7 @@ make link               # Symlink all dotfiles via stow + individual links
 make signers            # Add this machine's SSH signing key to config/git/allowed_signers
 make link-claude        # Link Claude Code settings, statusline, and skills
 make claude-mcp         # Register Claude Code MCP servers from Mcpfile
+make claude-plugins     # Install Claude Code plugins from Pluginfile
 make unlink             # Remove symlinked dotfiles
 make vscode-extensions  # Install VS Code extensions from Codefile
 ```
@@ -128,6 +129,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`
 - **Global npm tools**: Add to `install/Npmfile`, then run `make npm-tools`
 - **Claude Code MCP servers**: Add a `name|command` line to `install/Mcpfile`, then run `make claude-mcp`
+- **Claude Code plugins**: Add a `plugin@marketplace|source` line to `install/Pluginfile`, then run `make claude-plugins`
 - **Aliases**: Edit `system/.alias`
 - **Functions**: Edit `system/.function`
 - **Environment variables**: Edit `system/.env`
