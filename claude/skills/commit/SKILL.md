@@ -25,6 +25,9 @@ Generate a conventional commit message for the staged changes only. Explain accu
 - Use hard line breaks at 72 characters
 - Can have multiple paragraphs if needed
 
-**Important:** Do NOT include any "Co-Authored-By" line or similar attribution. Output ONLY the commit message without any co-author information.
+**Co-author trailer:**
+- End every message with a `Co-Authored-By` trailer, after a blank line
+- Credit the model actually running at the time — never a hardcoded name
+- Format: `Co-Authored-By: Claude <model name> <noreply@anthropic.com>`
 
 Output ONLY the final commit message text, nothing else.
