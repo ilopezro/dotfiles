@@ -24,14 +24,7 @@
     "eslint.useFlatConfig": true,
     "terminal.integrated.environmentChangesRelaunch": true,
     "python.analysis.typeCheckingMode": "standard",
-    "yaml.disableSchemaDetection": [
-        "**/.github/workflows/*.yml",
-        "**/.github/workflows/*.yaml",
-        "**/.gitea/workflows/*.yml",
-        "**/.gitea/workflows/*.yaml",
-        "**/.forgejo/workflows/*.yml",
-        "**/.forgejo/workflows/*.yaml"
-    ],
+    "yaml.disableSchemaDetection": [],
     "workbench.editorAssociations": {
         "*.md": "default"
     }
