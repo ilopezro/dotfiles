@@ -10,13 +10,20 @@
     "feature-dev@claude-plugins-official": true,
     "ruby-lsp@claude-plugins-official": true,
     "mongodb@claude-plugins-official": true,
-    "caveman@caveman": true
+    "caveman@caveman": true,
+    "docuseal@docuseal-agent-skills": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
       "source": {
         "source": "github",
         "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "docuseal-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "docusealco/docuseal-agent-skills"
       }
     }
   },
