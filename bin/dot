@@ -123,8 +123,17 @@ sub_health() {
   [ -L "$HOME/.zshrc" ]                && _check ".zshrc"               ok || _check ".zshrc"               "not linked"
   [ -L "$HOME/.tool-versions" ]        && _check ".tool-versions"        ok || _check ".tool-versions"        "not linked"
   [ -L "$HOME/.asdfrc" ]               && _check ".asdfrc"               ok || _check ".asdfrc"               "not linked"
-  [ -L "$HOME/.claude/settings.json" ] && _check "claude/settings.json" ok || _check "claude/settings.json" "not linked"
-  [ -L "$HOME/Library/Application Support/Code/User/settings.json" ] && _check "vscode/settings.json" ok || _check "vscode/settings.json" "not linked"
+  while IFS='|' read -r src dest; do
+    [ -z "$src" ] && continue
+    dest=$(printf '%s' "$dest" | sed "s|^\$HOME|$HOME|")
+    if [ ! -L "$dest" ]; then
+      _check "$src" "not linked"
+    elif [ ! -e "$dest" ]; then
+      _check "$src" "dangling link"
+    else
+      _check "$src" ok
+    fi
+  done < "$DOTFILES_DIR/install/Linkfile"
 
   echo ""
   echo "Commit signing"

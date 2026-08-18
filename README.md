@@ -111,12 +111,13 @@ make oh-my-zsh          # Install Oh My Zsh and plugins
 make asdf-plugins       # Install asdf plugins and runtimes from .tool-versions
 make go-tools           # Install Go tools (gopls)
 make npm-tools          # Install global npm packages from Npmfile
-make link               # Symlink all dotfiles via stow + individual links
+make link               # Symlink all dotfiles via stow + individual links from Linkfile
 make signers            # Add this machine's SSH signing key to config/git/allowed_signers
-make link-claude        # Link Claude Code settings, statusline, and skills
+make link-files         # Create only the individual symlinks listed in Linkfile
 make claude-mcp         # Register Claude Code MCP servers from Mcpfile
 make claude-plugins     # Install Claude Code plugins from Pluginfile
 make unlink             # Remove symlinked dotfiles
+make test-link          # Round-trip link/unlink in a throwaway HOME and verify teardown is complete
 make vscode-extensions  # Install VS Code extensions from Codefile
 ```
 
@@ -130,6 +131,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **Global npm tools**: Add to `install/Npmfile`, then run `make npm-tools`
 - **Claude Code MCP servers**: Add a `name|command` line to `install/Mcpfile`, then run `make claude-mcp`
 - **Claude Code plugins**: Add a `plugin@marketplace|source` line to `install/Pluginfile`, then run `make claude-plugins`
+- **Individual symlinks** (anything not stowed): Add a `source|destination` line to `install/Linkfile`, then run `make link-files`. `make link`, `make unlink`, `dot health`, and `make test-link` all read this file, so one line is all it takes
 - **Aliases**: Edit `system/.alias`
 - **Functions**: Edit `system/.function`
 - **Environment variables**: Edit `system/.env`

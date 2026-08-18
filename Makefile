@@ -3,9 +3,10 @@ STOW_DIR := $(DOTFILES_DIR)
 VSCODE_DIR := $(HOME)/Library/Application Support/Code/User
 CLAUDE_DIR := $(HOME)/.claude
 SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
+LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink vscode-extensions claude-mcp claude-plugins signers
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers
 
 all: macos
 
@@ -99,24 +100,19 @@ stow-config:
 	mkdir -p $(HOME)/.config
 	stow -d $(STOW_DIR) -t $(HOME)/.config config
 
-link-vscode:
-	@mkdir -p "$(VSCODE_DIR)"
-	@if [ -f "$(VSCODE_DIR)/settings.json" ] && [ ! -L "$(VSCODE_DIR)/settings.json" ]; then \
-		echo "Backing up existing VS Code settings to settings.json.bak"; \
-		mv "$(VSCODE_DIR)/settings.json" "$(VSCODE_DIR)/settings.json.bak"; \
-	fi
-	ln -sf $(DOTFILES_DIR)vscode/settings.json "$(VSCODE_DIR)/settings.json"
+link-files:
+	@while IFS='|' read -r src dest; do \
+		[ -z "$$src" ] && continue; \
+		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$(HOME)|"); \
+		mkdir -p "$$(dirname "$$dest")"; \
+		if [ -f "$$dest" ] && [ ! -L "$$dest" ]; then \
+			echo "Backing up existing $$dest to $$dest.bak"; \
+			mv "$$dest" "$$dest.bak"; \
+		fi; \
+		ln -sf "$(DOTFILES_DIR)$$src" "$$dest"; \
+	done < $(LINKFILE)
 
-link-claude:
-	@mkdir -p "$(CLAUDE_DIR)/skills/commit"
-	@if [ -f "$(CLAUDE_DIR)/settings.json" ] && [ ! -L "$(CLAUDE_DIR)/settings.json" ]; then \
-		echo "Backing up existing Claude settings to settings.json.bak"; \
-		mv "$(CLAUDE_DIR)/settings.json" "$(CLAUDE_DIR)/settings.json.bak"; \
-	fi
-	ln -sf $(DOTFILES_DIR)claude/settings.json "$(CLAUDE_DIR)/settings.json"
-	ln -sf $(DOTFILES_DIR)claude/statusline_command.sh "$(CLAUDE_DIR)/statusline_command.sh"
-	ln -sf $(DOTFILES_DIR)claude/skills/commit/SKILL.md "$(CLAUDE_DIR)/skills/commit/SKILL.md"
-	ln -sf $(DOTFILES_DIR)claude/CLAUDE.md "$(CLAUDE_DIR)/CLAUDE.md"
+link-vscode link-claude: link-files
 
 signers:
 	@key_path="$$(git config user.signingkey)"; \
@@ -179,10 +175,38 @@ claude-plugins:
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom
 	stow -d $(STOW_DIR) -t $(HOME)/.config -D config
-	rm -f "$(VSCODE_DIR)/settings.json"
-	rm -f "$(CLAUDE_DIR)/settings.json"
-	rm -f "$(CLAUDE_DIR)/statusline_command.sh"
-	rm -f "$(CLAUDE_DIR)/skills/commit/SKILL.md"
+	@while IFS='|' read -r src dest; do \
+		[ -z "$$src" ] && continue; \
+		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$(HOME)|"); \
+		rm -f "$$dest"; \
+	done < $(LINKFILE)
+
+# Round-trips link/unlink against a throwaway HOME, then asserts nothing in the
+# repo is still linked. Catches a Linkfile entry that link or unlink forgot.
+test-link:
+	@tmp=$$(mktemp -d) || exit 1; \
+	trap 'rm -rf "$$tmp"' EXIT INT TERM; \
+	echo "Testing link/unlink in $$tmp"; \
+	$(MAKE) --no-print-directory HOME="$$tmp" link >/dev/null || exit 1; \
+	missing=0; \
+	while IFS='|' read -r src dest; do \
+		[ -z "$$src" ] && continue; \
+		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$$tmp|"); \
+		if [ ! -L "$$dest" ]; then echo "  ✗ link missing: $$dest"; missing=1; \
+		elif [ ! -e "$$dest" ]; then echo "  ✗ link dangling: $$dest"; missing=1; \
+		else echo "  ✓ linked: $$src"; fi; \
+	done < $(LINKFILE); \
+	$(MAKE) --no-print-directory HOME="$$tmp" unlink >/dev/null || exit 1; \
+	leftover=$$(find "$$tmp" -type l -exec sh -c 'readlink "$$1" | grep -q "^$(DOTFILES_DIR)" && echo "$$1"' _ {} \;); \
+	if [ -n "$$leftover" ]; then \
+		echo "  ✗ still linked after unlink:"; \
+		echo "$$leftover" | sed 's|^|      |'; \
+		missing=1; \
+	else \
+		echo "  ✓ teardown removed every link into the repo"; \
+	fi; \
+	[ "$$missing" = "0" ] || { echo "test-link failed."; exit 1; }; \
+	echo "test-link passed."
 
 vscode-extensions:
 	@cat $(DOTFILES_DIR)install/Codefile | while read ext; do \
