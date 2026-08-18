@@ -8,7 +8,7 @@ sub_help() {
   echo "Commands:"
   echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
-  echo "  health    Check symlinks, commit signing, required tools, Claude Code plugins, and asdf runtimes"
+  echo "  health    Check symlinks, commit signing, required tools, cask apps, Claude Code plugins, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -19,7 +19,8 @@ sub_install() {
   brew bundle --file="$DOTFILES_DIR/install/Brewfile"
 
   echo "Installing cask apps..."
-  brew bundle --file="$DOTFILES_DIR/install/Caskfile"
+  brew bundle --file="$DOTFILES_DIR/install/Caskfile" || true
+  "$DOTFILES_DIR/bin/cask-doctor" repair
 
   echo "Installing Mac App Store apps..."
   while IFS='|' read -r name id; do
@@ -156,6 +157,10 @@ sub_health() {
   done
 
   echo ""
+  echo "Cask apps"
+  "$DOTFILES_DIR/bin/cask-doctor" check || ok=0
+
+  echo ""
   echo "Global npm tools"
   while IFS= read -r pkg; do
     [ -z "$pkg" ] && continue
@@ -194,7 +199,7 @@ sub_health() {
   done < "$DOTFILES_DIR/runcom/.tool-versions"
 
   echo ""
-  [ "$ok" = "1" ] && echo "All checks passed." || echo "Some checks failed. Run \`dot install\` or \`make link\` to fix."
+  [ "$ok" = "1" ] && echo "All checks passed." || echo "Some checks failed. Run \`dot install\`, \`make cask-apps\`, or \`make link\` to fix."
 }
 
 sub_clean() {

@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# Verify that every cask in install/Caskfile is not just recorded as installed by
+# Homebrew, but that its artifacts actually exist on disk. A failed `brew upgrade`
+# can delete /Applications/Foo.app while leaving the Caskroom receipt in place, so
+# `brew bundle` reports the cask as up to date forever. This catches that drift.
+#
+# Usage:
+#   cask-doctor check    # report status, exit 1 if anything is missing or broken
+#   cask-doctor repair   # reinstall whatever is missing or broken, then re-check
+
+set -uo pipefail
+
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+CASKFILE="$DOTFILES_DIR/install/Caskfile"
+BREW_PREFIX="$(brew --prefix)"
+
+casks() {
+  sed -n 's/^cask "\(.*\)".*/\1/p' "$CASKFILE"
+}
+
+# Emit "cask<TAB>app|bin<TAB>artifact" for every App and Binary artifact.
+artifacts() {
+  brew info --cask "$@" 2>/dev/null | awk '
+    /^==> Artifacts$/            { section = "artifacts"; next }
+    /^==> / && NF >= 3 && $3 ~ /^\(/ { cask = $2; section = ""; next }
+    /^==> /                      { section = ""; next }
+    section != "artifacts"       { next }
+    /\(App\)$/                   { sub(/ \(App\)$/, ""); print cask "\tapp\t" $0; next }
+    /\(Binary\)$/                { sub(/ \(Binary\)$/, ""); print cask "\tbin\t" $0; next }
+  '
+}
+
+# An artifact may be written as "source -> installed-name"; the installed name is
+# what actually lands in /Applications or the brew bin, so that is what we check.
+installed_name() {
+  case "$1" in
+    *" -> "*) basename "${1##* -> }" ;;
+    *)        basename "$1" ;;
+  esac
+}
+
+# Prints a status word for one cask: ok | missing | broken: <artifact>
+status_of() {
+  local cask="$1" artifact_lines="$2" kind value name
+
+  if ! grep -qx "$cask" <<<"$INSTALLED"; then
+    echo "missing"
+    return
+  fi
+
+  while IFS=$'\t' read -r kind value; do
+    [ -z "$kind" ] && continue
+    name=$(installed_name "$value")
+    case "$kind" in
+      app)
+        [ -e "/Applications/$name" ] || [ -e "$HOME/Applications/$name" ] && continue
+        ;;
+      bin)
+        [ -e "$BREW_PREFIX/bin/$name" ] && continue
+        ;;
+    esac
+    echo "broken: $name"
+    return
+  done <<<"$artifact_lines"
+
+  echo "ok"
+}
+
+collect() {
+  local cask_list all_artifacts
+  cask_list=$(casks)
+  [ -z "$cask_list" ] && return 0
+
+  INSTALLED=$(brew list --cask 2>/dev/null)
+  # shellcheck disable=SC2086
+  all_artifacts=$(artifacts $cask_list)
+
+  local cask
+  while IFS= read -r cask; do
+    [ -z "$cask" ] && continue
+    printf '%s\t%s\n' "$cask" \
+      "$(status_of "$cask" "$(awk -F'\t' -v c="$cask" '$1 == c { print $2 "\t" $3 }' <<<"$all_artifacts")")"
+  done <<<"$cask_list"
+}
+
+reinstall() {
+  local cask="$1"
+  brew reinstall --cask "$cask" && return 0
+  echo "  reinstall failed, forcing a clean install of $cask..."
+  brew uninstall --cask --force "$cask"
+  brew install --cask "$cask"
+}
+
+sub_check() {
+  local failed=0 cask status
+  while IFS=$'\t' read -r cask status; do
+    [ -z "$cask" ] && continue
+    if [ "$status" = "ok" ]; then
+      printf "  ✓ %s\n" "$cask"
+    else
+      printf "  ✗ %s (%s)\n" "$cask" "$status"
+      failed=1
+    fi
+  done < <(collect)
+  return $failed
+}
+
+sub_repair() {
+  local repaired=0 cask status
+  while IFS=$'\t' read -r cask status; do
+    [ -z "$cask" ] && continue
+    [ "$status" = "ok" ] && continue
+    echo "Repairing $cask ($status)..."
+    reinstall "$cask"
+    repaired=1
+  done < <(collect)
+
+  [ "$repaired" -eq 0 ] && echo "All casks healthy." && return 0
+
+  echo ""
+  echo "Re-checking..."
+  sub_check
+}
+
+case "${1:-check}" in
+  check)  sub_check ;;
+  repair) sub_repair ;;
+  *)      echo "usage: cask-doctor [check|repair]" >&2; exit 2 ;;
+esac

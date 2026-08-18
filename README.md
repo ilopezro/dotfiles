@@ -105,7 +105,7 @@ dot help      # Show available commands
 ```sh
 make                    # Full setup (same as make macos)
 make brew-packages      # Install Homebrew packages from Brewfile
-make cask-apps          # Install cask apps from Caskfile
+make cask-apps          # Install cask apps from Caskfile, then repair any whose artifacts are missing
 make mas-apps           # Install Mac App Store apps from Masfile (via mas)
 make oh-my-zsh          # Install Oh My Zsh and plugins
 make asdf-plugins       # Install asdf plugins and runtimes from .tool-versions
@@ -124,7 +124,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 ## Customization
 
 - **Brew packages**: Add to `install/Brewfile`, then run `make brew-packages`
-- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`
+- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own
 - **Mac App Store apps**: Add a `Name|id` line to `install/Masfile` (find the id with `mas search "Name"`), then run `make mas-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`

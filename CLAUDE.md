@@ -18,6 +18,8 @@ Whenever new functionality is added, update all relevant documentation points:
 
 Individual symlinks need no `sub_health` change — add a `source|destination` line to `install/Linkfile` and `make link`, `make unlink`, `sub_health`, and `make test-link` all pick it up. Never hardcode an individual symlink path in more than one place; that drift is what `install/Linkfile` exists to prevent.
 
+Cask apps need no `sub_health` change either — add a `cask "name"` line to `install/Caskfile` and `make cask-apps`, `dot install`, and `dot health` all pick it up through `bin/cask-doctor`.
+
 Always update the `sub_health` function in `bin/dot` when:
 - A new required tool is added to the setup (brew, stow, asdf, etc.)
 - A new asdf runtime is added to `runcom/.tool-versions`
@@ -37,6 +39,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 ## Key files
 
 - `bin/dot` — the `dot` CLI, handles updates, cleaning, and editing
+- `bin/cask-doctor` — verifies that every cask in `install/Caskfile` has its App and Binary artifacts on disk, not just a Homebrew receipt. `check` reports and exits non-zero on drift; `repair` reinstalls the broken ones (falling back to a forced uninstall/install) and re-checks. Both `make cask-apps` and `dot install` run `repair` after `brew bundle`; `sub_health` runs `check`. Adding a cask to `install/Caskfile` is all that's needed — never hardcode a cask name anywhere else
 - `Makefile` — full machine setup, idempotent and safe to re-run
 - `runcom/.zshrc` — zsh config, symlinked to `~/.zshrc` via stow
 - `runcom/.tool-versions` — asdf runtime versions, symlinked to `~/.tool-versions` via stow

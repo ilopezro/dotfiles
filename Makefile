@@ -25,8 +25,12 @@ packages: brew-packages cask-apps mas-apps
 brew-packages: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Brewfile
 
-cask-apps: brew
-	brew bundle --file=$(DOTFILES_DIR)install/Caskfile
+# `brew bundle` trusts its own receipts, so a cask whose app was deleted by a failed
+# upgrade still reports as installed. Let bundle do the bulk work, then let
+# cask-doctor find and reinstall anything whose artifacts are actually missing.
+cask-apps: brew sudo
+	brew bundle --file=$(DOTFILES_DIR)install/Caskfile || true
+	cask-doctor repair
 
 mas-apps: brew-packages
 	@while IFS='|' read -r name id; do \
