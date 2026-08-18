@@ -23,4 +23,4 @@ done
 source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
 
 # Added by Devin
-export PATH="/Users/ilopezro/.codeium/windsurf/bin:$PATH"
+export PATH="$HOME/.codeium/windsurf/bin:$PATH"
