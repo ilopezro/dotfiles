@@ -23,20 +23,20 @@ sub_install() {
   "$DOTFILES_DIR/bin/cask-doctor" repair
 
   echo "Installing Mac App Store apps..."
-  while IFS='|' read -r name id; do
+  while IFS='|' read -r name id || [ -n "$name" ]; do
     [ -z "$name" ] && continue
     echo "  Installing $name..."
     mas install "$id" || true
   done < "$DOTFILES_DIR/install/Masfile"
 
   echo "Installing global npm tools..."
-  cat "$DOTFILES_DIR/install/Npmfile" | while read pkg; do
+  while read -r pkg || [ -n "$pkg" ]; do
     [ -z "$pkg" ] && continue
     npm install -g "$pkg"
-  done
+  done < "$DOTFILES_DIR/install/Npmfile"
 
   echo "Configuring Claude Code MCP servers..."
-  while IFS='|' read -r name cmd; do
+  while IFS='|' read -r name cmd || [ -n "$name" ]; do
     [ -z "$name" ] && continue
     if claude mcp get "$name" >/dev/null 2>&1; then
       echo "  MCP server already configured: $name"
@@ -50,7 +50,7 @@ sub_install() {
     echo "Skipping Claude Code plugins: claude not found."
   else
     echo "Installing Claude Code plugins..."
-    while IFS='|' read -r plugin source; do
+    while IFS='|' read -r plugin source || [ -n "$plugin" ]; do
       [ -z "$plugin" ] && continue
       market="${plugin#*@}"
       if claude plugin marketplace list 2>/dev/null | grep -q "❯ $market$"; then
@@ -99,7 +99,7 @@ sub_update() {
   done
 
   echo "[6/6] Updating Claude Code plugins..."
-  while IFS='|' read -r plugin source; do
+  while IFS='|' read -r plugin source || [ -n "$plugin" ]; do
     [ -z "$plugin" ] && continue
     claude plugin update "$plugin" 2>/dev/null || true
   done < "$DOTFILES_DIR/install/Pluginfile"
@@ -124,7 +124,7 @@ sub_health() {
   [ -L "$HOME/.zshrc" ]                && _check ".zshrc"               ok || _check ".zshrc"               "not linked"
   [ -L "$HOME/.tool-versions" ]        && _check ".tool-versions"        ok || _check ".tool-versions"        "not linked"
   [ -L "$HOME/.asdfrc" ]               && _check ".asdfrc"               ok || _check ".asdfrc"               "not linked"
-  while IFS='|' read -r src dest; do
+  while IFS='|' read -r src dest || [ -n "$src" ]; do
     [ -z "$src" ] && continue
     dest=$(printf '%s' "$dest" | sed "s|^\$HOME|$HOME|")
     if [ ! -L "$dest" ]; then
@@ -162,35 +162,35 @@ sub_health() {
 
   echo ""
   echo "Global npm tools"
-  while IFS= read -r pkg; do
+  while IFS= read -r pkg || [ -n "$pkg" ]; do
     [ -z "$pkg" ] && continue
     npm list -g --depth=0 "$pkg" >/dev/null 2>&1 && _check "$pkg" ok || _check "$pkg" "not installed"
   done < "$DOTFILES_DIR/install/Npmfile"
 
   echo ""
   echo "Mac App Store apps"
-  while IFS='|' read -r name id; do
+  while IFS='|' read -r name id || [ -n "$name" ]; do
     [ -z "$name" ] && continue
     mas list 2>/dev/null | grep -q "^$id " && _check "$name" ok || _check "$name" "not installed"
   done < "$DOTFILES_DIR/install/Masfile"
 
   echo ""
   echo "Claude Code MCP servers"
-  while IFS='|' read -r name cmd; do
+  while IFS='|' read -r name cmd || [ -n "$name" ]; do
     [ -z "$name" ] && continue
     claude mcp get "$name" >/dev/null 2>&1 && _check "$name" ok || _check "$name" "not configured"
   done < "$DOTFILES_DIR/install/Mcpfile"
 
   echo ""
   echo "Claude Code plugins"
-  while IFS='|' read -r plugin source; do
+  while IFS='|' read -r plugin source || [ -n "$plugin" ]; do
     [ -z "$plugin" ] && continue
     claude plugin list 2>/dev/null | grep -q "❯ $plugin$" && _check "$plugin" ok || _check "$plugin" "not installed"
   done < "$DOTFILES_DIR/install/Pluginfile"
 
   echo ""
   echo "asdf runtimes"
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     [ -z "$line" ] && continue
     name=$(echo "$line" | awk '{print $1}')
     version=$(echo "$line" | awk '{print $2}')

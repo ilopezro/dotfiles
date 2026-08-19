@@ -37,7 +37,11 @@ git clone https://github.com/ilopezro/dotfiles.git ~/dotfiles
 cd ~/dotfiles && make
 ```
 
-Running `make` is idempotent — it's safe to run multiple times.
+Running `make` is idempotent — it's safe to run multiple times, and re-running it after a failure picks up where it left off.
+
+`make` runs each setup step in order and keeps going if one fails, then lists the failures at the end and exits non-zero. A single unreachable download or broken cask therefore can't stop `link`, `signers`, or the asdf runtimes from being set up. Fix the cause and run `make` again, or just the one step (`make cask-apps`).
+
+Some steps need root — a few casks own symlinks outside the Homebrew prefix. `make` asks for your password once up front and keeps the credential warm for the whole run, so nothing stalls on a hidden prompt halfway through. With no terminal to prompt on (CI, cron, an unattended run), it says so and continues; run `sudo -v` beforehand if you want those steps to succeed.
 
 This will install Homebrew packages, cask apps, Mac App Store apps, Oh My Zsh (with plugins), symlink configs, register this machine's SSH signing key, install asdf plugins and runtimes, install Go tools, install global npm tools, install VS Code extensions, link Claude Code settings and skills, and register Claude Code MCP servers.
 
@@ -124,7 +128,7 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 ## Customization
 
 - **Brew packages**: Add to `install/Brewfile`, then run `make brew-packages`
-- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own
+- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own. Repair asks for your password up front when it needs one — some casks own symlinks outside the Homebrew prefix — and is safe to interrupt and re-run: it re-derives what is still broken on every invocation
 - **Mac App Store apps**: Add a `Name|id` line to `install/Masfile` (find the id with `mas search "Name"`), then run `make mas-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`

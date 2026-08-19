@@ -31,18 +31,21 @@ artifacts() {
   '
 }
 
-# An artifact may be written as "source -> installed-name"; the installed name is
-# what actually lands in /Applications or the brew bin, so that is what we check.
-installed_name() {
+# An artifact may be written as "source -> target"; the target is what actually lands
+# on disk, so that is what we check. Keep it whole rather than reducing it to a
+# basename: Binary targets are often absolute paths outside the Homebrew prefix
+# (docker-desktop links into /usr/local/bin), and dropping the directory made those
+# casks read as broken forever no matter how often they were reinstalled.
+installed_target() {
   case "$1" in
-    *" -> "*) basename "${1##* -> }" ;;
-    *)        basename "$1" ;;
+    *" -> "*) printf '%s\n' "${1##* -> }" ;;
+    *)        printf '%s\n' "$1" ;;
   esac
 }
 
 # Prints a status word for one cask: ok | missing | broken: <artifact>
 status_of() {
-  local cask="$1" artifact_lines="$2" kind value name
+  local cask="$1" artifact_lines="$2" kind value target name
 
   if ! grep -qx "$cask" <<<"$INSTALLED"; then
     echo "missing"
@@ -51,13 +54,17 @@ status_of() {
 
   while IFS=$'\t' read -r kind value; do
     [ -z "$kind" ] && continue
-    name=$(installed_name "$value")
+    target=$(installed_target "$value")
+    name=$(basename "$target")
     case "$kind" in
       app)
-        [ -e "/Applications/$name" ] || [ -e "$HOME/Applications/$name" ] && continue
+        { [ -e "/Applications/$name" ] || [ -e "$HOME/Applications/$name" ]; } && continue
         ;;
       bin)
-        [ -e "$BREW_PREFIX/bin/$name" ] && continue
+        case "$target" in
+          /*) [ -e "$target" ] && continue ;;
+          *)  [ -e "$BREW_PREFIX/bin/$name" ] && continue ;;
+        esac
         ;;
     esac
     echo "broken: $name"
@@ -84,12 +91,55 @@ collect() {
   done <<<"$cask_list"
 }
 
+# Repairing a cask can need root: casks like docker-desktop own symlinks in
+# /usr/local/bin, outside the Homebrew prefix. Homebrew removes those from a sandbox
+# child with no controlling terminal, so its sudo prompt blocks forever with echo
+# still on. Prime the credential cache here, on the real terminal, before any brew
+# work starts.
+ensure_sudo() {
+  sudo -n true 2>/dev/null && return 0
+
+  if [ ! -t 0 ]; then
+    echo "cask-doctor: repair needs sudo, but there is no terminal to prompt on." >&2
+    echo "  Run 'sudo -v' in your shell first, then re-run: cask-doctor repair" >&2
+    return 1
+  fi
+
+  echo "Repair needs sudo to remove app-owned symlinks outside the Homebrew prefix."
+  sudo -v
+}
+
+# Drop symlinks in the cask bin directories that point into an /Applications path
+# which no longer exists. A half-finished uninstall leaves these behind, and brew
+# then needs root to clear them. Only ever removes links that are already broken,
+# so running it twice is a no-op.
+prune_dangling_links() {
+  local dir link
+  for dir in /usr/local/bin /usr/local/cli-plugins "$BREW_PREFIX/bin"; do
+    [ -d "$dir" ] || continue
+    for link in "$dir"/*; do
+      [ -L "$link" ] || continue
+      [ -e "$link" ] && continue
+      case "$(readlink "$link")" in
+        */Applications/*) ;;
+        *) continue ;;
+      esac
+      echo "  removing dangling symlink $link"
+      rm -f "$link" 2>/dev/null || sudo rm -f "$link"
+    done
+  done
+}
+
 reinstall() {
   local cask="$1"
+
+  prune_dangling_links
   brew reinstall --cask "$cask" && return 0
+
   echo "  reinstall failed, forcing a clean install of $cask..."
-  brew uninstall --cask --force "$cask"
-  brew install --cask "$cask"
+  brew uninstall --cask --force "$cask" || true
+  prune_dangling_links
+  brew install --cask --force "$cask"
 }
 
 sub_check() {
@@ -107,16 +157,36 @@ sub_check() {
 }
 
 sub_repair() {
-  local repaired=0 cask status
+  local cask status entry
+  local -a pending=()
+
+  # Collect first, so the whole list is known before anything is touched. Deciding
+  # mid-loop means an interrupt leaves no record of what was still outstanding.
   while IFS=$'\t' read -r cask status; do
     [ -z "$cask" ] && continue
     [ "$status" = "ok" ] && continue
-    echo "Repairing $cask ($status)..."
-    reinstall "$cask"
-    repaired=1
+    pending+=("$cask|$status")
   done < <(collect)
 
-  [ "$repaired" -eq 0 ] && echo "All casks healthy." && return 0
+  if [ "${#pending[@]}" -eq 0 ]; then
+    echo "All casks healthy."
+    return 0
+  fi
+
+  ensure_sudo || return 1
+
+  # Interrupting a cask uninstall part-way is what creates the receipt-without-app
+  # state to begin with, so say plainly how to finish it.
+  trap 'echo ""; echo "Interrupted. Re-run \`cask-doctor repair\` to finish."; exit 130' INT TERM
+
+  for entry in "${pending[@]}"; do
+    cask="${entry%%|*}"
+    status="${entry#*|}"
+    echo "Repairing $cask ($status)..."
+    reinstall "$cask"
+  done
+
+  trap - INT TERM
 
   echo ""
   echo "Re-checking..."

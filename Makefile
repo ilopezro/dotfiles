@@ -6,19 +6,57 @@ SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers
 
 all: macos
 
-macos: sudo packages oh-my-zsh safe-chain link signers asdf-plugins go-tools npm-tools vscode-extensions claude-mcp claude-plugins
+MACOS_STEPS := packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
+               npm-tools vscode-extensions claude-mcp claude-plugins
 
+# Every step below is independently idempotent, so a failing step must not strand the
+# ones after it. As plain prerequisites, one broken cask meant `link`, `signers`, and
+# the runtimes never ran however many times you re-ran make — the run could never
+# reach a fixed point. Run them in order instead, collect failures, and report at the
+# end so a re-run still has something left to converge on.
+macos: sudo
+	@failed=""; \
+	for step in $(MACOS_STEPS); do \
+		echo ""; \
+		echo "==> $$step"; \
+		$(MAKE) --no-print-directory $$step || failed="$$failed $$step"; \
+	done; \
+	echo ""; \
+	if [ -n "$$failed" ]; then \
+		echo "Finished with failures:$$failed"; \
+		echo "Each step is safe to re-run: fix the cause, then \`make\` again or \`make <step>\`."; \
+		exit 1; \
+	fi; \
+	echo "All steps completed."
+
+# Keep the sudo ticket warm for as long as make runs. `cask-apps` can reach a cask
+# that needs root minutes after this target primed the cache, and macOS expires the
+# timestamp after 5 minutes — so without the refresher a long run hits a password
+# prompt from inside a brew sandbox that has no terminal to show it on. $$PPID is
+# make's own pid, so the refresher exits on its own once make is gone.
 sudo:
-	sudo -v
-	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	@if sudo -n true 2>/dev/null; then \
+		echo "sudo credentials already cached."; \
+	elif [ -t 0 ]; then \
+		sudo -v; \
+	else \
+		echo "No terminal to prompt on, skipping sudo priming."; \
+		echo "  Steps needing root will say so. Run \`sudo -v\` first for an unattended run."; \
+	fi
+	@pid=$$PPID; while kill -0 $$pid 2>/dev/null; do sudo -n true; sleep 60; done >/dev/null 2>&1 &
 
 brew:
-	is-macos && command -v brew >/dev/null 2>&1 || \
-		/bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+	@if command -v brew >/dev/null 2>&1; then \
+		echo "Homebrew already installed."; \
+	elif is-macos; then \
+		/bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; \
+	else \
+		echo "Not macOS, skipping Homebrew install."; \
+	fi
 
 packages: brew-packages cask-apps mas-apps
 
@@ -33,7 +71,7 @@ cask-apps: brew sudo
 	cask-doctor repair
 
 mas-apps: brew-packages
-	@while IFS='|' read -r name id; do \
+	@while IFS='|' read -r name id || [ -n "$$name" ]; do \
 		[ -z "$$name" ] && continue; \
 		echo "Installing $$name..."; \
 		mas install "$$id" || true; \
@@ -47,12 +85,17 @@ safe-chain:
 		echo "safe-chain already installed."; \
 	fi
 
+ASDF_PLUGINS := nodejs python golang ruby air
+
 asdf-plugins:
-	@asdf plugin list 2>/dev/null | grep -q nodejs  || asdf plugin add nodejs
-	@asdf plugin list 2>/dev/null | grep -q python  || asdf plugin add python
-	@asdf plugin list 2>/dev/null | grep -q golang  || asdf plugin add golang
-	@asdf plugin list 2>/dev/null | grep -q ruby    || asdf plugin add ruby
-	@asdf plugin list 2>/dev/null | grep -q air     || asdf plugin add air
+	@installed="$$(asdf plugin list 2>/dev/null)"; \
+	for plugin in $(ASDF_PLUGINS); do \
+		if printf '%s\n' "$$installed" | grep -qx "$$plugin"; then \
+			echo "asdf plugin already added: $$plugin"; \
+		else \
+			asdf plugin add "$$plugin"; \
+		fi; \
+	done
 	@asdf install
 	@asdf reshim
 
@@ -61,10 +104,10 @@ go-tools:
 	@asdf reshim golang
 
 npm-tools:
-	@cat $(DOTFILES_DIR)install/Npmfile | while read pkg; do \
+	@while read -r pkg || [ -n "$$pkg" ]; do \
 		[ -z "$$pkg" ] && continue; \
 		npm install -g "$$pkg"; \
-	done
+	done < $(DOTFILES_DIR)install/Npmfile
 	@asdf reshim nodejs
 
 oh-my-zsh:
@@ -105,13 +148,14 @@ stow-config:
 	stow -d $(STOW_DIR) -t $(HOME)/.config config
 
 link-files:
-	@while IFS='|' read -r src dest; do \
+	@while IFS='|' read -r src dest || [ -n "$$src" ]; do \
 		[ -z "$$src" ] && continue; \
 		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$(HOME)|"); \
 		mkdir -p "$$(dirname "$$dest")"; \
 		if [ -f "$$dest" ] && [ ! -L "$$dest" ]; then \
-			echo "Backing up existing $$dest to $$dest.bak"; \
-			mv "$$dest" "$$dest.bak"; \
+			backup="$$dest.bak.$$(date +%Y%m%d%H%M%S)"; \
+			echo "Backing up existing $$dest to $$backup"; \
+			mv "$$dest" "$$backup"; \
 		fi; \
 		ln -sf "$(DOTFILES_DIR)$$src" "$$dest"; \
 	done < $(LINKFILE)
@@ -140,7 +184,7 @@ signers:
 	fi
 
 claude-mcp:
-	@while IFS='|' read -r name cmd; do \
+	@while IFS='|' read -r name cmd || [ -n "$$name" ]; do \
 		[ -z "$$name" ] && continue; \
 		if claude mcp get "$$name" >/dev/null 2>&1; then \
 			echo "MCP server already configured: $$name"; \
@@ -155,7 +199,7 @@ claude-plugins:
 		echo "claude not found, skipping plugins. Rerun \`make claude-plugins\` after Claude Code is installed."; \
 		exit 0; \
 	fi; \
-	while IFS='|' read -r plugin source; do \
+	while IFS='|' read -r plugin source || [ -n "$$plugin" ]; do \
 		[ -z "$$plugin" ] && continue; \
 		market="$${plugin#*@}"; \
 		if claude plugin marketplace list 2>/dev/null | grep -q "❯ $$market$$"; then \
@@ -179,7 +223,7 @@ claude-plugins:
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom
 	stow -d $(STOW_DIR) -t $(HOME)/.config -D config
-	@while IFS='|' read -r src dest; do \
+	@while IFS='|' read -r src dest || [ -n "$$src" ]; do \
 		[ -z "$$src" ] && continue; \
 		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$(HOME)|"); \
 		rm -f "$$dest"; \
@@ -193,7 +237,7 @@ test-link:
 	echo "Testing link/unlink in $$tmp"; \
 	$(MAKE) --no-print-directory HOME="$$tmp" link >/dev/null || exit 1; \
 	missing=0; \
-	while IFS='|' read -r src dest; do \
+	while IFS='|' read -r src dest || [ -n "$$src" ]; do \
 		[ -z "$$src" ] && continue; \
 		dest=$$(printf '%s' "$$dest" | sed "s|^\$$HOME|$$tmp|"); \
 		if [ ! -L "$$dest" ]; then echo "  ✗ link missing: $$dest"; missing=1; \
@@ -213,6 +257,7 @@ test-link:
 	echo "test-link passed."
 
 vscode-extensions:
-	@cat $(DOTFILES_DIR)install/Codefile | while read ext; do \
+	@while read -r ext || [ -n "$$ext" ]; do \
+		[ -z "$$ext" ] && continue; \
 		code --install-extension "$$ext" --force 2>/dev/null || true; \
-	done
+	done < $(DOTFILES_DIR)install/Codefile
