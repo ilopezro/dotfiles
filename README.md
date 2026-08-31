@@ -12,6 +12,8 @@ Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](h
 - [asdf](https://asdf-vm.com) for runtime version management (nodejs, python, golang, ruby, air, uv)
 - Global npm tools (packages: [Npmfile](./install/Npmfile))
 - [Claude Code](https://claude.ai/claude-code) (settings, statusline, skills, MCP servers: [Mcpfile](./install/Mcpfile), plugins: [Pluginfile](./install/Pluginfile))
+- macOS login items (apps: [Loginfile](./install/Loginfile))
+- macOS preferences via `defaults` (settings: [Defaultsfile](./install/Defaultsfile))
 
 ## Fresh Install
 
@@ -98,7 +100,7 @@ dot update
 ```sh
 dot install   # Install packages from Brewfile, Caskfile, and Npmfile, MCP servers from Mcpfile, and plugins from Pluginfile (initial setup)
 dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
-dot health    # Check symlinks, commit signing, required tools, Claude Code plugins, and asdf runtimes
+dot health    # Check symlinks, commit signing, required tools, macOS defaults, login items, Claude Code plugins, and asdf runtimes
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
@@ -123,6 +125,8 @@ make claude-plugins     # Install Claude Code plugins from Pluginfile
 make unlink             # Remove symlinked dotfiles
 make test-link          # Round-trip link/unlink in a throwaway HOME and verify teardown is complete
 make vscode-extensions  # Install VS Code extensions from Codefile
+make login-items        # Register macOS login items from Loginfile
+make macos-defaults     # Apply macOS preferences from Defaultsfile
 ```
 
 ## Customization
@@ -135,6 +139,8 @@ make vscode-extensions  # Install VS Code extensions from Codefile
 - **Global npm tools**: Add to `install/Npmfile`, then run `make npm-tools`
 - **Claude Code MCP servers**: Add a `name|command` line to `install/Mcpfile`, then run `make claude-mcp`
 - **Claude Code plugins**: Add a `plugin@marketplace|source` line to `install/Pluginfile`, then run `make claude-plugins`
+- **Login items** (apps that open at login): Add the app's full `.app` path to `install/Loginfile`, then run `make login-items`. Items are added via System Events (login items live in the Background Task Management database, which `defaults` can't write), so the first run prompts once for Automation permission. Apps not yet installed are skipped; `dot health` checks each entry
+- **macOS defaults** (Dock, Finder, and other `defaults`-backed settings): Add a `domain|key|type|value|restart` line to `install/Defaultsfile` (e.g. `com.apple.dock|autohide|bool|true|Dock`), then run `make macos-defaults`. Only values that differ are written, and the restart app (`-` for none) is only killed when something changed. `dot health` reports drift via `bin/macos-defaults check`
 - **Individual symlinks** (anything not stowed): Add a `source|destination` line to `install/Linkfile`, then run `make link-files`. `make link`, `make unlink`, `dot health`, and `make test-link` all read this file, so one line is all it takes
 - **Aliases**: Edit `system/.alias`
 - **Functions**: Edit `system/.function`

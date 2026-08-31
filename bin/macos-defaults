@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Applies and verifies macOS preferences from install/Defaultsfile.
+# Lines are `domain|key|type|value|restart`, where type is any `defaults write`
+# type (bool, int, float, string) and restart is the app to killall when the
+# value changed (`-` for none).
+#
+#   macos-defaults apply   write any values that differ, restart affected apps
+#   macos-defaults check   report drift, exit non-zero if any
+
+DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+FILE="$DOTFILES_DIR/install/Defaultsfile"
+
+# `defaults read` prints booleans as 1/0, so both sides are normalized before
+# comparing — otherwise `true` never equals `1` and apply re-writes every run.
+normalize() {
+  case "$1" in
+    true|YES) echo 1 ;;
+    false|NO) echo 0 ;;
+    *) echo "$1" ;;
+  esac
+}
+
+check() {
+  drift=0
+  while IFS='|' read -r domain key type value restart || [ -n "$domain" ]; do
+    [ -z "$domain" ] && continue
+    current=$(defaults read "$domain" "$key" 2>/dev/null)
+    if [ "$(normalize "$current")" = "$(normalize "$value")" ]; then
+      printf '  ✓ %s %s = %s\n' "$domain" "$key" "$value"
+    else
+      printf '  ✗ %s %s (want %s, have %s)\n' "$domain" "$key" "$value" "${current:-unset}"
+      drift=1
+    fi
+  done < "$FILE"
+  return "$drift"
+}
+
+apply() {
+  restarts=""
+  while IFS='|' read -r domain key type value restart || [ -n "$domain" ]; do
+    [ -z "$domain" ] && continue
+    current=$(defaults read "$domain" "$key" 2>/dev/null)
+    if [ "$(normalize "$current")" = "$(normalize "$value")" ]; then
+      echo "Already set: $domain $key = $value"
+    else
+      echo "Setting $domain $key = $value"
+      defaults write "$domain" "$key" "-$type" "$value" || return 1
+      case " $restarts " in
+        *" $restart "*) ;;
+        *) restarts="$restarts $restart" ;;
+      esac
+    fi
+  done < "$FILE"
+  for app in $restarts; do
+    [ "$app" = "-" ] && continue
+    echo "Restarting $app"
+    killall "$app" 2>/dev/null || true
+  done
+}
+
+case "$1" in
+  apply) apply ;;
+  check) check ;;
+  *) echo "Usage: macos-defaults <apply|check>"; exit 2 ;;
+esac

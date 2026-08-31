@@ -6,12 +6,13 @@ SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers login-items macos-defaults
 
 all: macos
 
 MACOS_STEPS := packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
-               npm-tools vscode-extensions claude-mcp claude-plugins
+               npm-tools vscode-extensions claude-mcp claude-plugins login-items \
+               macos-defaults
 
 # Every step below is independently idempotent, so a failing step must not strand the
 # ones after it. As plain prerequisites, one broken cask meant `link`, `signers`, and
@@ -219,6 +220,30 @@ claude-plugins:
 				echo "  Skipping $$plugin: install failed (rerun \`make claude-plugins\` to retry)."; \
 		fi; \
 	done < $(DOTFILES_DIR)install/Pluginfile
+
+# Login items live in the Background Task Management database, which `defaults`
+# cannot write — System Events via osascript is the scriptable path. Matched by
+# path substring because apps may register a helper inside their own bundle
+# (OneDrive's login item is OneDrive.app/Contents/OneDrive Sync Service.app).
+# First run prompts once for Automation permission over System Events.
+login-items:
+	@if ! is-macos; then echo "Not macOS, skipping login items."; exit 0; fi; \
+	current="$$(osascript -e 'tell application "System Events" to get the path of every login item' 2>/dev/null)"; \
+	while IFS= read -r app || [ -n "$$app" ]; do \
+		[ -z "$$app" ] && continue; \
+		if [ ! -d "$$app" ]; then \
+			echo "Skipping login item (app not installed): $$app"; \
+		elif printf '%s' "$$current" | grep -qF "$$app"; then \
+			echo "Login item already present: $$app"; \
+		else \
+			echo "Adding login item: $$app"; \
+			osascript -e "tell application \"System Events\" to make login item at end with properties {path:\"$$app\", hidden:false}" >/dev/null; \
+		fi; \
+	done < $(DOTFILES_DIR)install/Loginfile
+
+macos-defaults:
+	@if ! is-macos; then echo "Not macOS, skipping defaults."; exit 0; fi; \
+	macos-defaults apply
 
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom

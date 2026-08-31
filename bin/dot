@@ -6,9 +6,9 @@ sub_help() {
   echo "Usage: dot <command>"
   echo ""
   echo "Commands:"
-  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
+  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
-  echo "  health    Check symlinks, commit signing, required tools, cask apps, Claude Code plugins, and asdf runtimes"
+  echo "  health    Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, and asdf runtimes"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -45,6 +45,12 @@ sub_install() {
       claude mcp add --scope user "$name" -- $cmd
     fi
   done < "$DOTFILES_DIR/install/Mcpfile"
+
+  echo "Registering login items..."
+  make -C "$DOTFILES_DIR" --no-print-directory login-items
+
+  echo "Applying macOS defaults..."
+  "$DOTFILES_DIR/bin/macos-defaults" apply
 
   if ! command -v claude >/dev/null 2>&1; then
     echo "Skipping Claude Code plugins: claude not found."
@@ -173,6 +179,25 @@ sub_health() {
     [ -z "$name" ] && continue
     mas list 2>/dev/null | grep -q "^$id " && _check "$name" ok || _check "$name" "not installed"
   done < "$DOTFILES_DIR/install/Masfile"
+
+  echo ""
+  echo "macOS defaults"
+  "$DOTFILES_DIR/bin/macos-defaults" check || ok=0
+
+  echo ""
+  echo "Login items"
+  login_paths=$(osascript -e 'tell application "System Events" to get the path of every login item' 2>/dev/null)
+  while IFS= read -r app || [ -n "$app" ]; do
+    [ -z "$app" ] && continue
+    label=$(basename "$app" .app)
+    if [ ! -d "$app" ]; then
+      _check "$label" "app not installed"
+    elif printf '%s' "$login_paths" | grep -qF "$app"; then
+      _check "$label" ok
+    else
+      _check "$label" "not a login item — run \`make login-items\`"
+    fi
+  done < "$DOTFILES_DIR/install/Loginfile"
 
   echo ""
   echo "Claude Code MCP servers"

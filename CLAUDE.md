@@ -20,6 +20,10 @@ Individual symlinks need no `sub_health` change — add a `source|destination` l
 
 Cask apps need no `sub_health` change either — add a `cask "name"` line to `install/Caskfile` and `make cask-apps`, `dot install`, and `dot health` all pick it up through `bin/cask-doctor`.
 
+Login items need no `sub_health` change either — add an absolute `.app` path line to `install/Loginfile` and `make login-items` and `dot health` both pick it up.
+
+macOS defaults need no `sub_health` change either — add a `domain|key|type|value|restart` line to `install/Defaultsfile` and `make macos-defaults`, `dot install`, and `dot health` all pick it up through `bin/macos-defaults`.
+
 Always update the `sub_health` function in `bin/dot` when:
 - A new required tool is added to the setup (brew, stow, asdf, etc.)
 - A new asdf runtime is added to `runcom/.tool-versions`
@@ -52,6 +56,9 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Npmfile` — global npm packages
 - `install/Mcpfile` — Claude Code MCP servers (`name|command` per line, registered at user scope via `claude mcp add`)
 - `install/Pluginfile` — Claude Code plugins (`plugin@marketplace|source` per line). `make claude-plugins` adds the marketplace then installs the plugin at user scope, skipping either step if already present. Note that plugins can register hooks that run on every session start and prompt submit, so review a plugin's `.claude-plugin/plugin.json` before adding it here.
+- `bin/macos-defaults` — applies (`apply`) and verifies (`check`) macOS preferences from `install/Defaultsfile`. Booleans are normalized before comparing (`defaults read` prints 1/0), so runs converge; the restart app is only killed when a value actually changed
+- `install/Defaultsfile` — macOS `defaults` settings (`domain|key|type|value|restart` per line, restart `-` for none). Applied by `make macos-defaults` and `dot install`, drift-checked by `dot health`. Adding a line is all that's needed — never hardcode a defaults key anywhere else
+- `install/Loginfile` — macOS login items (one absolute `.app` path per line). `make login-items` registers each via osascript + System Events, skipping apps not on disk and entries already present (matched by path substring, since apps like OneDrive register a helper inside their own bundle); `sub_health` checks each entry. Login items live in the Background Task Management database, so `defaults` can't manage them; first run prompts once for Automation permission over System Events. Adding a line to the file is all that's needed
 - `install/Linkfile` — individual symlinks (`source|destination` per line, `$HOME` in the destination is expanded at link time). Single source of truth for every symlink that isn't stow-managed: `make link-files` creates them, `make unlink` removes them, `dot health` verifies them, `make test-link` round-trips the pair. Use it for app-managed directories where stow would conflict with state the app writes itself.
 - `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `install/Linkfile`, not stowed)
 - `config/ghostty/config` — Ghostty terminal config, stowed to `~/.config/ghostty/config`
