@@ -81,7 +81,7 @@ Log into apps: 1Password, Arc, Slack, Spotify, Docker, etc.
 
 ## Keeping Up to Date
 
-On every new terminal, dotfiles will check for updates every 13 days and prompt:
+On every new terminal, dotfiles will check for updates every 7 days and prompt:
 
 ```
 [dotfiles] Updates available. Would you like to update? [Y/n]

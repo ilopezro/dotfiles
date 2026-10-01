@@ -7,7 +7,7 @@ _dotfiles_update() {
   local DOTFILES_DIR="$HOME/dotfiles"
   local CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
   local TIMESTAMP_FILE="$CACHE_DIR/.dotfiles-update"
-  local UPDATE_FREQUENCY=13  # days
+  local UPDATE_FREQUENCY=7  # days
 
   # Bail if not a terminal or git unavailable
   [[ -t 1 ]] || return

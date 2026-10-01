@@ -48,7 +48,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `runcom/.zshrc` — zsh config, symlinked to `~/.zshrc` via stow
 - `runcom/.tool-versions` — asdf runtime versions, symlinked to `~/.tool-versions` via stow
 - `system/` — shell config files sourced by `.zshrc` on every terminal open
-- `system/.dotfiles-update` — auto-update check, runs every 13 days
+- `system/.dotfiles-update` — auto-update check, runs every 7 days
 - `install/Brewfile` — Homebrew packages
 - `install/Caskfile` — Homebrew cask apps
 - `install/Masfile` — Mac App Store apps (`name|id` per line, installed via `mas`, requires the `mas` brew and being signed into the App Store)
