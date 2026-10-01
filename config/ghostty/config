@@ -6,6 +6,7 @@
 font-family = "JetBrains Mono"
 font-size = 12
 font-thicken = true
+window-title-font-family = "JetBrains Mono"
 
 # --- Theme (auto light/dark, follows macOS appearance) ---
 theme = dark:Catppuccin Mocha,light:Catppuccin Latte
@@ -29,3 +30,8 @@ quit-after-last-window-closed = true
 keybind = cmd+d=new_split:right
 keybind = cmd+shift+d=new_split:down
 keybind = cmd+enter=toggle_fullscreen
+
+# --- Updates ---
+# Temporary: tip channel for the macOS 27 tabs titlebar fix (ghostty#13069).
+# Remove once the fix ships in a stable release.
+auto-update-channel = tip

@@ -50,7 +50,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `system/` — shell config files sourced by `.zshrc` on every terminal open
 - `system/.dotfiles-update` — auto-update check, runs every 7 days
 - `install/Brewfile` — Homebrew packages
-- `install/Caskfile` — Homebrew cask apps
+- `install/Caskfile` — Homebrew cask apps, including font casks. Any font named in `config/ghostty/config` belongs here: Ghostty renders the terminal grid in a font it resolves itself even when nothing is installed system-wide, so a missing font cask is invisible until some other consumer (AppKit, another app) needs the family name and silently falls back
 - `install/Masfile` — Mac App Store apps (`name|id` per line, installed via `mas`, requires the `mas` brew and being signed into the App Store)
 - `install/Codefile` — VS Code extensions
 - `install/Npmfile` — global npm packages
@@ -61,7 +61,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Loginfile` — macOS login items (one absolute `.app` path per line). `make login-items` registers each via osascript + System Events, skipping apps not on disk and entries already present (matched by path substring, since apps like OneDrive register a helper inside their own bundle); `sub_health` checks each entry. Login items live in the Background Task Management database, so `defaults` can't manage them; first run prompts once for Automation permission over System Events. Adding a line to the file is all that's needed
 - `install/Linkfile` — individual symlinks (`source|destination` per line, `$HOME` in the destination is expanded at link time). Single source of truth for every symlink that isn't stow-managed: `make link-files` creates them, `make unlink` removes them, `dot health` verifies them, `make test-link` round-trips the pair. Use it for app-managed directories where stow would conflict with state the app writes itself.
 - `claude/` — Claude Code settings, statusline, and skills (symlinked individually via `install/Linkfile`, not stowed)
-- `config/ghostty/config` — Ghostty terminal config, stowed to `~/.config/ghostty/config`
+- `config/ghostty/config` — Ghostty terminal config, stowed to `~/.config/ghostty/config`. `font-family` is resolved by Ghostty itself, but `window-title-font-family` is resolved by AppKit (`NSFont`), which only sees system-installed fonts and falls back to the system font without any error when the name does not resolve — verify a family with `osascript -l JavaScript -e 'ObjC.import("AppKit"); $.NSFont.fontWithNameSize("Family", 13).isNil()'` before assuming the setting is ignored. Window chrome settings only apply to windows opened after a config reload
 - `config/git/allowed_signers` — shared SSH signature-verification allowlist, one `identities key` line per machine. The *signing* key is per-machine and lives in the gitignored `~/.config/git/local`; this file is the union of every machine's public key and is committed. `make signers` appends the current machine's key idempotently.
 
 ## Stow layout

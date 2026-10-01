@@ -149,7 +149,7 @@ make macos-defaults     # Apply macOS preferences from Defaultsfile
 - **Claude Code settings**: Edit `claude/settings.json`
 - **Claude Code skills**: Add to `claude/skills/`
 - **Trusted signing keys**: Run `make signers` on a new machine, then commit `config/git/allowed_signers`
-- **Ghostty terminal**: Edit `config/ghostty/config` (stowed to `~/.config/ghostty/config`); reload in-app with `Cmd+Shift+,`
+- **Ghostty terminal**: Edit `config/ghostty/config` (stowed to `~/.config/ghostty/config`); reload in-app with `Cmd+Shift+,`. Changes to window chrome (`macos-titlebar-style`, `window-title-font-family`) only take effect in windows opened after the reload. Any font named in that config must be installed system-wide via `install/Caskfile` — Ghostty resolves `font-family` for the terminal grid even when the font is not installed, but `window-title-font-family` goes through AppKit and silently falls back to the system font if the family name does not resolve
 
 ## Credits
 
