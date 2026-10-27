@@ -6,12 +6,12 @@ SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins signers login-items macos-defaults
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults
 
 all: macos
 
 MACOS_STEPS := packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
-               npm-tools vscode-extensions claude-mcp claude-plugins login-items \
+               npm-tools vscode-extensions claude-mcp claude-plugins claude-skills login-items \
                macos-defaults
 
 # Every step below is independently idempotent, so a failing step must not strand the
@@ -220,6 +220,22 @@ claude-plugins:
 				echo "  Skipping $$plugin: install failed (rerun \`make claude-plugins\` to retry)."; \
 		fi; \
 	done < $(DOTFILES_DIR)install/Pluginfile
+
+claude-skills:
+	@if ! command -v npx >/dev/null 2>&1; then \
+		echo "npx not found, skipping skills. Rerun \`make claude-skills\` after Node.js is installed."; \
+		exit 0; \
+	fi; \
+	while IFS= read -r source || [ -n "$$source" ]; do \
+		[ -z "$$source" ] && continue; \
+		if npx --yes skills list -g 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -q "Source: $$source$$"; then \
+			echo "Skill source already installed: $$source"; \
+		else \
+			echo "Adding skill source: $$source"; \
+			npx --yes skills add -g -y "$$source" || \
+				echo "  Skipping $$source: install failed (rerun \`make claude-skills\` to retry)."; \
+		fi; \
+	done < $(DOTFILES_DIR)install/Skillfile
 
 # Login items live in the Background Task Management database, which `defaults`
 # cannot write — System Events via osascript is the scriptable path. Matched by

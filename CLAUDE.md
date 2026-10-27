@@ -30,6 +30,7 @@ Always update the `sub_health` function in `bin/dot` when:
 - The commit-signing setup changes (`config/git/allowed_signers`, `make signers`)
 - A new Mac App Store app is added to `install/Masfile`
 - A new Claude Code plugin is added to `install/Pluginfile`
+- A new Claude Code skill source is added to `install/Skillfile`
 
 ## README
 
@@ -56,6 +57,7 @@ Always update `README.md` when making changes that affect user-facing behavior, 
 - `install/Npmfile` — global npm packages
 - `install/Mcpfile` — Claude Code MCP servers (`name|command` per line, registered at user scope via `claude mcp add`)
 - `install/Pluginfile` — Claude Code plugins (`plugin@marketplace|source` per line). `make claude-plugins` adds the marketplace then installs the plugin at user scope, skipping either step if already present. Note that plugins can register hooks that run on every session start and prompt submit, so review a plugin's `.claude-plugin/plugin.json` before adding it here.
+- `install/Skillfile` — Claude Code skill sources installed via the [`skills` CLI](https://www.npmjs.com/package/skills) (one GitHub `owner/repo` source per line). `make claude-skills` runs `npx skills add -g -y <source>` for each, skipping sources already present in the global skill list. The tool owns the actual state — skills land in `~/.agents/skills/*` (source of truth, outside this repo) and are symlinked into `~/.claude/skills/*`; it also maintains its own lockfile at `~/.agents/.skill-lock.json`. To update installed skills to their latest versions, run `npx skills update -g`. A single source can install multiple named skills — review what a source actually installs (`npx skills add -g -s '*' -l <source>` lists without installing) before adding it here.
 - `bin/macos-defaults` — applies (`apply`) and verifies (`check`) macOS preferences from `install/Defaultsfile`. Booleans are normalized before comparing (`defaults read` prints 1/0), so runs converge; the restart app is only killed when a value actually changed
 - `install/Defaultsfile` — macOS `defaults` settings (`domain|key|type|value|restart` per line, restart `-` for none). Applied by `make macos-defaults` and `dot install`, drift-checked by `dot health`. Adding a line is all that's needed — never hardcode a defaults key anywhere else
 - `install/Loginfile` — macOS login items (one absolute `.app` path per line). `make login-items` registers each via osascript + System Events, skipping apps not on disk and entries already present (matched by path substring, since apps like OneDrive register a helper inside their own bundle); `sub_health` checks each entry. Login items live in the Background Task Management database, so `defaults` can't manage them; first run prompts once for Automation permission over System Events. Adding a line to the file is all that's needed

@@ -214,6 +214,14 @@ sub_health() {
   done < "$DOTFILES_DIR/install/Pluginfile"
 
   echo ""
+  echo "Claude Code skills"
+  while IFS= read -r source || [ -n "$source" ]; do
+    [ -z "$source" ] && continue
+    npx --yes skills list -g 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -q "Source: $source$" \
+      && _check "$source" ok || _check "$source" "not installed"
+  done < "$DOTFILES_DIR/install/Skillfile"
+
+  echo ""
   echo "asdf runtimes"
   while IFS= read -r line || [ -n "$line" ]; do
     [ -z "$line" ] && continue

@@ -30,5 +30,6 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "theme": "auto",
-  "autoCompactEnabled": false
+  "autoCompactEnabled": false,
+  "agentPushNotifEnabled": true
 }
