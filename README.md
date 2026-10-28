@@ -101,6 +101,7 @@ dot update
 dot install   # Install packages from Brewfile, Caskfile, and Npmfile, MCP servers from Mcpfile, plugins from Pluginfile, and skills from Skillfile (initial setup)
 dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
 dot health    # Check symlinks, commit signing, required tools, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes
+dot prune     # Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
@@ -133,7 +134,7 @@ make macos-defaults     # Apply macOS preferences from Defaultsfile
 ## Customization
 
 - **Brew packages**: Add to `install/Brewfile`, then run `make brew-packages`
-- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own. Repair asks for your password up front when it needs one — some casks own symlinks outside the Homebrew prefix — and is safe to interrupt and re-run: it re-derives what is still broken on every invocation
+- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own. `dot health` also lists casks installed on the machine but missing from `install/Caskfile` as a warning (not a failure); add them to the Caskfile to keep them, or run `dot prune` to uninstall them. It asks about each cask individually; `dot prune --all` asks once for the whole list. Repair asks for your password up front when it needs one — some casks own symlinks outside the Homebrew prefix — and is safe to interrupt and re-run: it re-derives what is still broken on every invocation
 - **Mac App Store apps**: Add a `Name|id` line to `install/Masfile` (find the id with `mas search "Name"`), then run `make mas-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`

@@ -8,7 +8,8 @@ sub_help() {
   echo "Commands:"
   echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
   echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
-  echo "  health    Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, and asdf runtimes"
+  echo "  health    Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes"
+  echo "  prune     Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)"
   echo "  clean     Clean up caches (brew, gem)"
   echo "  edit      Open dotfiles in editor"
   echo "  help      This help message"
@@ -165,6 +166,7 @@ sub_health() {
   echo ""
   echo "Cask apps"
   "$DOTFILES_DIR/bin/cask-doctor" check || ok=0
+  "$DOTFILES_DIR/bin/cask-doctor" extras
 
   echo ""
   echo "Global npm tools"
@@ -235,6 +237,10 @@ sub_health() {
   [ "$ok" = "1" ] && echo "All checks passed." || echo "Some checks failed. Run \`dot install\`, \`make cask-apps\`, or \`make link\` to fix."
 }
 
+sub_prune() {
+  "$DOTFILES_DIR/bin/cask-doctor" prune "$@"
+}
+
 sub_clean() {
   echo "Cleaning Homebrew cache..."
   brew cleanup
@@ -251,6 +257,7 @@ case "$1" in
   install) sub_install ;;
   update)  sub_update ;;
   health)  sub_health ;;
+  prune)   shift; sub_prune "$@" ;;
   clean)   sub_clean ;;
   edit)    sub_edit ;;
   help)    sub_help ;;

@@ -8,6 +8,9 @@
 # Usage:
 #   cask-doctor check    # report status, exit 1 if anything is missing or broken
 #   cask-doctor repair   # reinstall whatever is missing or broken, then re-check
+#   cask-doctor extras   # list installed casks that are not in the Caskfile
+#   cask-doctor prune    # uninstall those extras, confirming each one
+#   cask-doctor prune --all  # uninstall all extras after a single confirmation
 
 set -uo pipefail
 
@@ -17,6 +20,11 @@ BREW_PREFIX="$(brew --prefix)"
 
 casks() {
   sed -n 's/^cask "\(.*\)".*/\1/p' "$CASKFILE"
+}
+
+# `brew list --cask` prints bare tokens, so strip any tap prefix before comparing.
+extras() {
+  comm -23 <(brew list --cask -1 2>/dev/null | sort -u) <(casks | sed 's|.*/||' | sort -u)
 }
 
 # Emit "cask<TAB>app|bin<TAB>artifact" for every App and Binary artifact.
@@ -193,8 +201,69 @@ sub_repair() {
   sub_check
 }
 
+# Extras are reported, never treated as failures: a one-off install is allowed, it
+# just should not go unnoticed.
+sub_extras() {
+  local list cask
+  list=$(extras)
+  if [ -z "$list" ]; then
+    printf "  ✓ no casks outside Caskfile\n"
+    return 0
+  fi
+  while IFS= read -r cask; do
+    printf "  ! %s (not in Caskfile)\n" "$cask"
+  done <<<"$list"
+  echo "  Add them to install/Caskfile to keep them, or run \`dot prune\` to uninstall them."
+}
+
+# Prompts per cask by default, since every yes deletes an app. --all asks once for
+# the whole list.
+sub_prune() {
+  local all=0 list cask answer
+  [ "${1:-}" = "--all" ] && all=1
+
+  list=$(extras)
+  if [ -z "$list" ]; then
+    echo "No casks outside Caskfile."
+    return 0
+  fi
+
+  if [ ! -t 0 ]; then
+    echo "cask-doctor: prune needs a terminal to confirm; nothing was uninstalled." >&2
+    return 1
+  fi
+
+  echo "These casks are installed but not in install/Caskfile:"
+  sed 's/^/  /' <<<"$list"
+  echo ""
+
+  if [ "$all" = "1" ]; then
+    printf "Uninstall all of them? [y/N] "
+    read -r answer
+    case "$answer" in
+      y|Y|yes|YES) ;;
+      *) echo "Nothing uninstalled."; return 0 ;;
+    esac
+  fi
+
+  while IFS= read -r cask <&3; do
+    if [ "$all" = "0" ]; then
+      printf "Uninstall %s? [y/N] " "$cask"
+      read -r answer
+      case "$answer" in
+        y|Y|yes|YES) ;;
+        *) echo "  keeping $cask"; continue ;;
+      esac
+    fi
+    echo "Uninstalling $cask..."
+    brew uninstall --cask "$cask" || echo "  failed to uninstall $cask"
+  done 3<<<"$list"
+}
+
 case "${1:-check}" in
   check)  sub_check ;;
   repair) sub_repair ;;
-  *)      echo "usage: cask-doctor [check|repair]" >&2; exit 2 ;;
+  extras) sub_extras ;;
+  prune)  sub_prune "${2:-}" ;;
+  *)      echo "usage: cask-doctor [check|repair|extras|prune [--all]]" >&2; exit 2 ;;
 esac

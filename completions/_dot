@@ -6,6 +6,7 @@ _dot() {
     'install:Install packages from Brewfile, Caskfile, Masfile, Npmfile, and Pluginfile'
     'update:Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins'
     'health:Check symlinks, required tools, Claude Code plugins, and asdf runtimes'
+    'prune:Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'
     'help:Show help message'
