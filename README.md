@@ -77,7 +77,7 @@ touch ~/dotfiles/system/.exports
 
 Sign into the Mac App Store (App Store → Sign In) before running `make mas-apps`, so `mas` can install Mac App Store apps like Amphetamine. `mas` can only install apps already associated with your Apple ID.
 
-Log into apps: 1Password, Arc, Slack, Spotify, Docker, etc.
+Log into apps: 1Password, Slack, Spotify, Docker, etc.
 
 ## Keeping Up to Date
 

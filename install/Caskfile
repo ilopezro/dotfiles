@@ -1,6 +1,5 @@
 cask "1password-cli"
 cask "1password"
-cask "arc"
 cask "chatgpt"
 cask "claude"
 cask "claude-code"
