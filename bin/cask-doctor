@@ -132,12 +132,12 @@ ensure_sudo() {
   sudo -n true 2>/dev/null && return 0
 
   if [ ! -t 0 ]; then
-    echo "cask-doctor: repair needs sudo, but there is no terminal to prompt on." >&2
-    echo "  Run 'sudo -v' in your shell first, then re-run: cask-doctor repair" >&2
+    error "cask-doctor: repair needs sudo, but there is no terminal to prompt on." >&2
+    note "Run 'sudo -v' in your shell first, then re-run: cask-doctor repair" >&2
     return 1
   fi
 
-  echo "Repair needs sudo to remove symlinks outside the Homebrew prefix or reclaim root-owned apps."
+  note "Repair needs sudo to remove symlinks outside the Homebrew prefix or reclaim root-owned apps."
   sudo -v
 }
 
@@ -156,7 +156,7 @@ prune_dangling_links() {
         */Applications/*) ;;
         *) continue ;;
       esac
-      echo "  removing dangling symlink $link"
+      info "removing dangling symlink $link"
       rm -f "$link" 2>/dev/null || sudo rm -f "$link"
     done
   done
@@ -168,7 +168,7 @@ reinstall() {
   prune_dangling_links
   brew reinstall --cask "$cask" && return 0
 
-  echo "  reinstall failed, forcing a clean install of $cask..."
+  warn "reinstall failed, forcing a clean install of $cask..."
   brew uninstall --cask --force "$cask" || true
   prune_dangling_links
   brew install --cask --force "$cask"
@@ -245,7 +245,7 @@ sub_extras() {
   while IFS= read -r cask; do
     warn "$cask (not in Caskfile)"
   done <<<"$list"
-  echo "  Add them to install/Caskfile to keep them, or run \`dot prune\` to uninstall them."
+  note "Add them to install/Caskfile to keep them, or run \`dot prune\` to uninstall them."
 }
 
 # Prompts per cask by default, since every yes deletes an app. --all asks once for
@@ -256,39 +256,39 @@ sub_prune() {
 
   list=$(extras)
   if [ -z "$list" ]; then
-    echo "No casks outside Caskfile."
+    success "No casks outside Caskfile."
     return 0
   fi
 
   if [ ! -t 0 ]; then
-    echo "cask-doctor: prune needs a terminal to confirm; nothing was uninstalled." >&2
+    error "cask-doctor: prune needs a terminal to confirm; nothing was uninstalled." >&2
     return 1
   fi
 
-  echo "These casks are installed but not in install/Caskfile:"
-  sed 's/^/  /' <<<"$list"
+  section "These casks are installed but not in install/Caskfile:"
+  while IFS= read -r cask; do warn "$cask"; done <<<"$list"
   echo ""
 
   if [ "$all" = "1" ]; then
-    printf "Uninstall all of them? [y/N] "
+    printf "%sUninstall all of them?%s [y/N] " "$C_BOLD" "$C_RESET"
     read -r answer
     case "$answer" in
       y|Y|yes|YES) ;;
-      *) echo "Nothing uninstalled."; return 0 ;;
+      *) note "Nothing uninstalled."; return 0 ;;
     esac
   fi
 
   while IFS= read -r cask <&3; do
     if [ "$all" = "0" ]; then
-      printf "Uninstall %s? [y/N] " "$cask"
+      printf "%sUninstall %s?%s [y/N] " "$C_BOLD" "$cask" "$C_RESET"
       read -r answer
       case "$answer" in
         y|Y|yes|YES) ;;
-        *) echo "  keeping $cask"; continue ;;
+        *) note "keeping $cask"; continue ;;
       esac
     fi
-    echo "Uninstalling $cask..."
-    brew uninstall --cask "$cask" || echo "  failed to uninstall $cask"
+    step "Uninstalling $cask..."
+    brew uninstall --cask "$cask" || fail "failed to uninstall $cask"
   done 3<<<"$list"
 }
 
@@ -297,5 +297,5 @@ case "${1:-check}" in
   repair) sub_repair ;;
   extras) sub_extras ;;
   prune)  sub_prune "${2:-}" ;;
-  *)      echo "usage: cask-doctor [check|repair|extras|prune [--all]]" >&2; exit 2 ;;
+  *)      error "usage: cask-doctor [check|repair|extras|prune [--all]]" >&2; exit 2 ;;
 esac

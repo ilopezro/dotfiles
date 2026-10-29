@@ -43,9 +43,9 @@ apply() {
     [ -z "$domain" ] && continue
     current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [ "$(normalize "$current")" = "$(normalize "$value")" ]; then
-      echo "Already set: $domain $key = $value"
+      note "Already set: $domain $key = $value"
     else
-      echo "Setting $domain $key = $value"
+      info "Setting $domain $key = $value"
       defaults write "$domain" "$key" "-$type" "$value" || return 1
       case " $restarts " in
         *" $restart "*) ;;
@@ -55,7 +55,7 @@ apply() {
   done < "$FILE"
   for app in $restarts; do
     [ "$app" = "-" ] && continue
-    echo "Restarting $app"
+    info "Restarting $app"
     killall "$app" 2>/dev/null || true
   done
 }
@@ -63,5 +63,5 @@ apply() {
 case "$1" in
   apply) apply ;;
   check) check ;;
-  *) echo "Usage: macos-defaults <apply|check>"; exit 2 ;;
+  *) error "Usage: macos-defaults <apply|check>"; exit 2 ;;
 esac

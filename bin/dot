@@ -3,17 +3,21 @@
 DOTFILES_DIR="$HOME/dotfiles"
 . "$DOTFILES_DIR/lib/colors.sh"
 
+help_cmd() {
+  printf '  %s%-9s%s %s\n' "$C_BLUE" "$1" "$C_RESET" "$2"
+}
+
 sub_help() {
-  echo "Usage: dot <command>"
+  printf '%sUsage:%s dot <command>\n' "$C_BOLD" "$C_RESET"
   echo ""
-  echo "Commands:"
-  echo "  install   Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
-  echo "  update    Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
-  echo "  health    Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes"
-  echo "  prune     Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)"
-  echo "  clean     Clean up caches (brew, gem)"
-  echo "  edit      Open dotfiles in editor"
-  echo "  help      This help message"
+  section "Commands:"
+  help_cmd install "Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"
+  help_cmd update  "Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"
+  help_cmd health  "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes"
+  help_cmd prune   "Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)"
+  help_cmd clean   "Clean up caches (brew, gem)"
+  help_cmd edit    "Open dotfiles in editor"
+  help_cmd help    "This help message"
 }
 
 sub_install() {
@@ -27,7 +31,7 @@ sub_install() {
   step "Installing Mac App Store apps..."
   while IFS='|' read -r name id || [ -n "$name" ]; do
     [ -z "$name" ] && continue
-    echo "  Installing $name..."
+    info "Installing $name..."
     mas install "$id" || true
   done < "$DOTFILES_DIR/install/Masfile"
 
@@ -43,7 +47,7 @@ sub_install() {
     if claude mcp get "$name" >/dev/null 2>&1; then
       note "MCP server already configured: $name"
     else
-      echo "  Adding MCP server: $name"
+      info "Adding MCP server: $name"
       claude mcp add --scope user "$name" -- $cmd
     fi
   done < "$DOTFILES_DIR/install/Mcpfile"
@@ -64,7 +68,7 @@ sub_install() {
       if claude plugin marketplace list 2>/dev/null | grep -q "❯ $market$"; then
         note "Marketplace already added: $market"
       else
-        echo "  Adding marketplace: $source"
+        info "Adding marketplace: $source"
         if ! claude plugin marketplace add "$source"; then
           warn "Skipping $plugin: could not reach $source (needs GitHub access)."
           continue
@@ -73,7 +77,7 @@ sub_install() {
       if claude plugin list 2>/dev/null | grep -q "❯ $plugin$"; then
         note "Plugin already installed: $plugin"
       else
-        echo "  Installing plugin: $plugin"
+        info "Installing plugin: $plugin"
         claude plugin install --scope user "$plugin" ||
           warn "Skipping $plugin: install failed."
       fi
@@ -180,7 +184,7 @@ sub_health() {
   section "Cask apps"
   if ! "$DOTFILES_DIR/bin/cask-doctor" check; then
     ok=0
-    echo "  Run \`$DOTFILES_DIR/bin/cask-doctor repair\` to fix them."
+    note "Run \`$DOTFILES_DIR/bin/cask-doctor repair\` to fix them."
   fi
   "$DOTFILES_DIR/bin/cask-doctor" extras
 
