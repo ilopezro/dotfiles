@@ -107,6 +107,10 @@ dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
 ```
 
+Output is colored when it goes to a terminal, using the standard ANSI colors so your terminal theme (Catppuccin in Ghostty) picks the shades and follows light/dark switches. Piped output is plain; set `NO_COLOR=1` to turn color off entirely.
+
+![dot health output](docs/dot-health.gif)
+
 ### Makefile targets
 
 ```sh
@@ -129,6 +133,7 @@ make test-link          # Round-trip link/unlink in a throwaway HOME and verify 
 make vscode-extensions  # Install VS Code extensions from Codefile
 make login-items        # Register macOS login items from Loginfile
 make macos-defaults     # Apply macOS preferences from Defaultsfile
+make demo               # Re-record docs/dot-health.gif (the README demo) with VHS
 ```
 
 ## Customization

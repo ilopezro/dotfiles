@@ -15,6 +15,8 @@
 set -uo pipefail
 
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck source=../lib/colors.sh
+. "$DOTFILES_DIR/lib/colors.sh"
 CASKFILE="$DOTFILES_DIR/install/Caskfile"
 BREW_PREFIX="$(brew --prefix)"
 
@@ -155,9 +157,9 @@ sub_check() {
   while IFS=$'\t' read -r cask status; do
     [ -z "$cask" ] && continue
     if [ "$status" = "ok" ]; then
-      printf "  ✓ %s\n" "$cask"
+      pass "$cask"
     else
-      printf "  ✗ %s (%s)\n" "$cask" "$status"
+      fail "$cask ($status)"
       failed=1
     fi
   done < <(collect)
@@ -177,7 +179,7 @@ sub_repair() {
   done < <(collect)
 
   if [ "${#pending[@]}" -eq 0 ]; then
-    echo "All casks healthy."
+    success "All casks healthy."
     return 0
   fi
 
@@ -190,14 +192,14 @@ sub_repair() {
   for entry in "${pending[@]}"; do
     cask="${entry%%|*}"
     status="${entry#*|}"
-    echo "Repairing $cask ($status)..."
+    step "Repairing $cask ($status)..."
     reinstall "$cask"
   done
 
   trap - INT TERM
 
   echo ""
-  echo "Re-checking..."
+  step "Re-checking..."
   sub_check
 }
 
@@ -207,11 +209,11 @@ sub_extras() {
   local list cask
   list=$(extras)
   if [ -z "$list" ]; then
-    printf "  ✓ no casks outside Caskfile\n"
+    pass "no casks outside Caskfile"
     return 0
   fi
   while IFS= read -r cask; do
-    printf "  ! %s (not in Caskfile)\n" "$cask"
+    warn "$cask (not in Caskfile)"
   done <<<"$list"
   echo "  Add them to install/Caskfile to keep them, or run \`dot prune\` to uninstall them."
 }
