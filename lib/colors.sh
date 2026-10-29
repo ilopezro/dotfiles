@@ -1,9 +1,10 @@
 # Shared output helpers for bin/dot, bin/cask-doctor, and bin/macos-defaults.
 # Sourced, not executed. Uses the 16 ANSI colors so the terminal theme (Catppuccin
 # via Ghostty) decides the actual shades and follows light/dark switches. Color is
-# off when stdout is not a terminal or NO_COLOR is set.
+# off when stdout is not a terminal or NO_COLOR is set; CLICOLOR_FORCE=1 keeps it
+# on for captured output (`make demo` records it for the README GIF).
 
-if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ]; then
+if [ -z "${NO_COLOR:-}" ] && { [ -n "${CLICOLOR_FORCE:-}" ] || { [ -t 1 ] && [ "${TERM:-}" != "dumb" ]; }; }; then
   _esc=$(printf '\033')
   C_RESET="${_esc}[0m"
   C_BOLD="${_esc}[1m"

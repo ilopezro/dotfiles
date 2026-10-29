@@ -6,7 +6,7 @@ SIGNERS_FILE := $(DOTFILES_DIR)config/git/allowed_signers
 LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults
+.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
 
 all: macos
 
@@ -302,3 +302,10 @@ vscode-extensions:
 		[ -z "$$ext" ] && continue; \
 		code --install-extension "$$ext" --force 2>/dev/null || true; \
 	done < $(DOTFILES_DIR)install/Codefile
+
+# Re-records docs/dot-health.gif. Captures a real run first because the checks are
+# too slow, and the login-items check needs permissions, to run inside VHS itself.
+demo:
+	@command -v vhs >/dev/null 2>&1 || { echo "vhs not found: brew install vhs"; exit 1; }
+	CLICOLOR_FORCE=1 $(DOTFILES_DIR)bin/dot health > $(DOTFILES_DIR)docs/.dot-health.ansi
+	cd $(DOTFILES_DIR)docs && vhs dot-health.tape
