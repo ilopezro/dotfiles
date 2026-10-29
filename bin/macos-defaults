@@ -10,6 +10,7 @@
 
 DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 FILE="$DOTFILES_DIR/install/Defaultsfile"
+. "$DOTFILES_DIR/lib/colors.sh"
 
 # `defaults read` prints booleans as 1/0, so both sides are normalized before
 # comparing — otherwise `true` never equals `1` and apply re-writes every run.
@@ -27,9 +28,9 @@ check() {
     [ -z "$domain" ] && continue
     current=$(defaults read "$domain" "$key" 2>/dev/null)
     if [ "$(normalize "$current")" = "$(normalize "$value")" ]; then
-      printf '  ✓ %s %s = %s\n' "$domain" "$key" "$value"
+      pass "$domain $key = $value"
     else
-      printf '  ✗ %s %s (want %s, have %s)\n' "$domain" "$key" "$value" "${current:-unset}"
+      fail "$domain $key (want $value, have ${current:-unset})"
       drift=1
     fi
   done < "$FILE"

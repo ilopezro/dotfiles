@@ -107,6 +107,8 @@ dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
 ```
 
+Output is colored when it goes to a terminal, using the standard ANSI colors so your terminal theme (Catppuccin in Ghostty) picks the shades and follows light/dark switches. Piped output is plain; set `NO_COLOR=1` to turn color off entirely.
+
 ### Makefile targets
 
 ```sh
