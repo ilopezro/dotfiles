@@ -19,6 +19,7 @@ DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 . "$DOTFILES_DIR/lib/colors.sh"
 CASKFILE="$DOTFILES_DIR/install/Caskfile"
 BREW_PREFIX="$(brew --prefix)"
+ME="$(id -un)"
 
 casks() {
   sed -n 's/^cask "\(.*\)".*/\1/p' "$CASKFILE"
@@ -53,9 +54,22 @@ installed_target() {
   esac
 }
 
-# Prints a status word for one cask: ok | missing | broken: <artifact>
+# Homebrew moves App artifacts into place as the invoking user. An app that updates
+# itself through a privileged helper (Slack does) can come back owned by root, and
+# then `brew upgrade` fails with "Permission denied @ apply2files" and strands a
+# backup copy in the Caskroom. The bundle and its Contents are checked rather than
+# every file, which would mean walking hundreds of MB per app.
+foreign_owner() {
+  local path="$1" owner
+  for owner in $(stat -f '%Su' "$path" "$path/Contents" 2>/dev/null); do
+    [ "$owner" != "$ME" ] && { echo "$owner"; return; }
+  done
+}
+
+# Prints a status word for one cask:
+#   ok | missing | broken: <artifact> | owned by <user>: <app path>
 status_of() {
-  local cask="$1" artifact_lines="$2" kind value target name
+  local cask="$1" artifact_lines="$2" kind value target name path owner
 
   if ! grep -qx "$cask" <<<"$INSTALLED"; then
     echo "missing"
@@ -68,7 +82,15 @@ status_of() {
     name=$(basename "$target")
     case "$kind" in
       app)
-        { [ -e "/Applications/$name" ] || [ -e "$HOME/Applications/$name" ]; } && continue
+        for path in "/Applications/$name" "$HOME/Applications/$name"; do
+          [ -e "$path" ] || continue
+          owner=$(foreign_owner "$path")
+          if [ -n "$owner" ]; then
+            echo "owned by $owner: $path"
+            return
+          fi
+          continue 2
+        done
         ;;
       bin)
         case "$target" in
@@ -115,7 +137,7 @@ ensure_sudo() {
     return 1
   fi
 
-  echo "Repair needs sudo to remove app-owned symlinks outside the Homebrew prefix."
+  echo "Repair needs sudo to remove symlinks outside the Homebrew prefix or reclaim root-owned apps."
   sudo -v
 }
 
@@ -193,7 +215,15 @@ sub_repair() {
     cask="${entry%%|*}"
     status="${entry#*|}"
     step "Repairing $cask ($status)..."
-    reinstall "$cask"
+    case "$status" in
+      "owned by "*)
+        # macOS App Management blocks changes to another app's bundle even for root,
+        # so an un-granted terminal gets "Operation not permitted" here.
+        sudo chown -R "$ME" "${status#*: }" ||
+          warn "chown failed. If it said 'Operation not permitted', allow your terminal under System Settings > Privacy & Security > App Management, restart it, and re-run."
+        ;;
+      *)            reinstall "$cask" ;;
+    esac
   done
 
   trap - INT TERM
