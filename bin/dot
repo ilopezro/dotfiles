@@ -184,7 +184,7 @@ sub_health() {
   section "Cask apps"
   if ! "$DOTFILES_DIR/bin/cask-doctor" check; then
     ok=0
-    note "Run \`$DOTFILES_DIR/bin/cask-doctor repair\` to fix them."
+    note "Run \`cask-doctor repair\` to fix them."
   fi
   "$DOTFILES_DIR/bin/cask-doctor" extras
 
