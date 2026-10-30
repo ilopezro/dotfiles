@@ -3,3 +3,4 @@ claude/statusline_command.sh|$HOME/.claude/statusline_command.sh
 claude/CLAUDE.md|$HOME/.claude/CLAUDE.md
 claude/skills/commit/SKILL.md|$HOME/.claude/skills/commit/SKILL.md
 vscode/settings.json|$HOME/Library/Application Support/Code/User/settings.json
+install/Npmfile|$HOME/.default-npm-packages

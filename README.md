@@ -143,7 +143,7 @@ make demo               # Re-record docs/dot-health.gif (the README demo) with V
 - **Mac App Store apps**: Add a `Name|id` line to `install/Masfile` (find the id with `mas search "Name"`), then run `make mas-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`
-- **Global npm tools**: Add to `install/Npmfile`, then run `make npm-tools`
+- **Global npm tools**: Add to `install/Npmfile`, then run `make npm-tools`. `install/Npmfile` is also linked to `~/.default-npm-packages`, so every Node version installed by `asdf install nodejs` gets these packages too
 - **Claude Code MCP servers**: Add a `name|command` line to `install/Mcpfile`, then run `make claude-mcp`
 - **Claude Code plugins**: Add a `plugin@marketplace|source` line to `install/Pluginfile`, then run `make claude-plugins`
 - **Claude Code skills** (third-party skill packages, installed via the [`skills` CLI](https://www.npmjs.com/package/skills)): Add a GitHub `owner/repo` line to `install/Skillfile`, then run `make claude-skills`. A source can install multiple skills at once — run `npx skills add -g -s '*' -l <source>` first to see what it would install. To pull updates for already-installed skills, run `npx skills update -g`
