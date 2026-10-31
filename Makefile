@@ -330,9 +330,14 @@ vscode-extensions:
 		code --install-extension "$$ext" --force 2>/dev/null || true; \
 	done < $(DOTFILES_DIR)install/Codefile
 
-# Re-records docs/dot-health.gif. Captures a real run first because the checks are
-# too slow, and the login-items check needs permissions, to run inside VHS itself.
+# Re-records docs/dot-health.gif. Records a real run first because the login-items
+# check needs permissions VHS's headless terminal does not have. `script -r` gives dot
+# a real terminal, so the spinner and colors are captured, and timestamps every write
+# so the tape can play it back at the speed it actually ran.
 demo: dot-bin
 	@$(COLORS) command -v vhs >/dev/null 2>&1 || { error "vhs not found: brew install vhs"; exit 1; }
-	CLICOLOR_FORCE=1 $(DOTFILES_DIR)bin/dot health > $(DOTFILES_DIR)docs/.dot-health.ansi
+	@# script reads the controlling terminal from stdin; without one (an unattended run)
+	@# it fails on tcgetattr, so give it /dev/null instead.
+	@if [ -t 0 ]; then in=/dev/stdin; else in=/dev/null; fi; \
+		script -q -r $(DOTFILES_DIR)docs/.dot-health.rec $(DOTFILES_DIR)bin/dot health < $$in
 	cd $(DOTFILES_DIR)docs && vhs dot-health.tape

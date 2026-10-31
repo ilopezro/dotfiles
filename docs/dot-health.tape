@@ -1,8 +1,8 @@
 # Records docs/dot-health.gif for the README. Run `make demo`, not vhs directly:
-# it captures a real `dot health` run into docs/.dot-health.ansi first, and this
-# tape replays that capture. Running the checks live inside VHS takes minutes and
-# hangs on the login-items check, which needs Automation permission that VHS's
-# headless terminal does not have.
+# it records a real `dot health` run into docs/.dot-health.rec first (`script -r`),
+# and this tape plays it back in real time (`script -p`), spinner included. Running
+# the checks live inside VHS hangs on the login-items check, which needs Automation
+# permission that VHS's headless terminal does not have.
 
 Output "dot-health.gif"
 
@@ -21,15 +21,15 @@ Set MarginFill "#b4befe"
 Set BorderRadius 10
 Set Shell "bash"
 
-# Replays the capture line by line, pausing at each blank line between sections, so
-# the report builds up the way a live run does instead of appearing all at once.
 Hide
-Type `dot() { while IFS= read -r l; do printf '%s\n' "$l"; if [ -z "$l" ]; then sleep 0.35; else sleep 0.05; fi; done < .dot-health.ansi; }; clear`
+Type `dot() { script -q -p .dot-health.rec; }; clear`
 Enter
 Show
 
 Type "dot health"
 Sleep 500ms
 Enter
-# Long enough for the replay (~9s) plus a pause on the finished report.
-Sleep 16s
+# The run takes as long as it took when recorded, so wait for its last line rather
+# than guessing a duration, then hold the finished report before the GIF loops.
+Wait+Screen@180s /checks (passed|failed)/
+Sleep 6s
