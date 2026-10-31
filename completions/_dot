@@ -27,6 +27,7 @@ _dot() {
           'repair:Reinstall or reclaim broken casks, then re-check'
           'extras:List installed casks that are not in Caskfile'
           'prune:Uninstall casks that are not in Caskfile'
+          'help:Show casks help'
         )
         _describe 'casks command' subcommands
       elif [[ "$words[3]" == prune ]]; then
@@ -38,6 +39,7 @@ _dot() {
         subcommands=(
           'check:Report drift from Defaultsfile'
           'apply:Write values that differ and restart affected apps'
+          'help:Show defaults help'
         )
         _describe 'defaults command' subcommands
       fi
