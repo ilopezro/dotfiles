@@ -9,6 +9,7 @@ import { C, error, fail, info, note, pass, print, STDERR, section, step, success
 import { parseCaskfile, readText } from "@/lib/manifest.ts";
 import { HOME, installFile } from "@/lib/paths.ts";
 import { capture, lines, run, succeeds } from "@/lib/proc.ts";
+import { spin } from "@/lib/spinner.ts";
 
 export type Artifact = { kind: "app" | "bin"; value: string };
 
@@ -20,6 +21,10 @@ function caskfile() {
 
 // `brew list --cask` prints bare tokens, so strip any tap prefix before comparing.
 async function extras() {
+  return spin("Looking for casks outside Caskfile", findExtras);
+}
+
+async function findExtras() {
   const wanted = new Set(caskfile().map((cask) => cask.replace(/.*\//, "")));
   const installed = lines((await capture(["brew", "list", "--cask", "-1"])).out);
   return [...new Set(installed)].filter((cask) => !wanted.has(cask)).sort();
@@ -94,6 +99,10 @@ async function statusOf(cask: string, artifacts: Artifact[], installed: Set<stri
 }
 
 async function collect() {
+  return spin("Inspecting casks", inspect);
+}
+
+async function inspect() {
   const casks = caskfile();
   if (casks.length === 0) return [];
 

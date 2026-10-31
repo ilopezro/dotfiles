@@ -6,6 +6,7 @@ import { fail, info, note, pass } from "@/lib/colors.ts";
 import { readFields } from "@/lib/manifest.ts";
 import { installFile } from "@/lib/paths.ts";
 import { capture, run } from "@/lib/proc.ts";
+import { spin } from "@/lib/spinner.ts";
 
 // `defaults read` prints booleans as 1/0, so both sides are normalized before
 // comparing — otherwise `true` never equals `1` and apply re-writes every run.
@@ -16,6 +17,10 @@ export function normalize(value: string) {
 }
 
 async function entries() {
+  return spin("Reading macOS defaults", readEntries);
+}
+
+async function readEntries() {
   const result = [];
   for (const [domain = "", key = "", type = "", value = "", restart = "-"] of readFields(installFile("Defaultsfile"))) {
     const current = (await capture(["defaults", "read", domain, key])).out;

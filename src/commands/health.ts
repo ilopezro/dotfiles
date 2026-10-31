@@ -6,6 +6,7 @@ import { error, fail, note, pass, print, section, success } from "@/lib/colors.t
 import { parseToolVersions, readFields, readLines, readText } from "@/lib/manifest.ts";
 import { DOTFILES_DIR, expandHome, HOME, installFile } from "@/lib/paths.ts";
 import { capture, has, lines, succeeds } from "@/lib/proc.ts";
+import { spin } from "@/lib/spinner.ts";
 
 const isLink = (path: string) => {
   try {
@@ -33,6 +34,8 @@ export async function health() {
       ok = false;
     }
   };
+  // For checks that wait on a command: the spinner holds the line until the result replaces it.
+  const probe = async (label: string, result: () => Promise<true | string>) => check(label, await spin(label, result));
 
   section("Symlinks");
   for (const file of [".zshrc", ".tool-versions", ".asdfrc"]) {
@@ -73,13 +76,15 @@ export async function health() {
   print();
   section("Global npm tools");
   for (const pkg of readLines(installFile("Npmfile"))) {
-    check(pkg, (await succeeds(["npm", "list", "-g", "--depth=0", pkg])) || "not installed");
+    await probe(pkg, async () => (await succeeds(["npm", "list", "-g", "--depth=0", pkg])) || "not installed");
   }
 
   print();
   section("Mac App Store apps");
   // `mas list` right-aligns ids, so short ones come with leading spaces.
-  const masApps = lines((await capture(["mas", "list"])).out).map((line) => line.trimStart());
+  const masApps = lines((await spin("Listing App Store apps", () => capture(["mas", "list"]))).out).map((line) =>
+    line.trimStart(),
+  );
   for (const [name = "", id = ""] of readFields(installFile("Masfile"))) {
     check(name, masApps.some((line) => line.startsWith(`${id} `)) || "not installed");
   }
@@ -91,7 +96,9 @@ export async function health() {
   print();
   section("Login items");
   const loginPaths = (
-    await capture(["osascript", "-e", 'tell application "System Events" to get the path of every login item'])
+    await spin("Reading login items", () =>
+      capture(["osascript", "-e", 'tell application "System Events" to get the path of every login item']),
+    )
   ).out;
   for (const app of readLines(installFile("Loginfile"))) {
     const label = basename(app, ".app");
@@ -102,12 +109,12 @@ export async function health() {
   print();
   section("Claude Code MCP servers");
   for (const [name = ""] of readFields(installFile("Mcpfile"))) {
-    check(name, (await succeeds(["claude", "mcp", "get", name])) || "not configured");
+    await probe(name, async () => (await succeeds(["claude", "mcp", "get", name])) || "not configured");
   }
 
   print();
   section("Claude Code plugins");
-  const plugins = lines((await capture(["claude", "plugin", "list"])).out);
+  const plugins = lines((await spin("Listing plugins", () => capture(["claude", "plugin", "list"]))).out);
   for (const [plugin = ""] of readFields(installFile("Pluginfile"))) {
     check(plugin, plugins.some((line) => line.endsWith(`❯ ${plugin}`)) || "not installed");
   }
@@ -116,7 +123,7 @@ export async function health() {
   section("Claude Code skills");
   const skillSources = readLines(installFile("Skillfile"));
   const skills = skillSources.length
-    ? lines(Bun.stripANSI((await capture(["npx", "--yes", "skills", "list", "-g"])).out))
+    ? lines(Bun.stripANSI((await spin("Listing skills", () => capture(["npx", "--yes", "skills", "list", "-g"]))).out))
     : [];
   for (const source of skillSources) {
     check(source, skills.some((line) => line.endsWith(`Source: ${source}`)) || "not installed");
@@ -125,8 +132,10 @@ export async function health() {
   print();
   section("asdf runtimes");
   for (const { name, version } of parseToolVersions(readText(join(DOTFILES_DIR, "runcom/.tool-versions")))) {
-    const installed = (await capture(["asdf", "list", name])).out;
-    check(`${name} ${version}`, installed.includes(version) || "not installed");
+    await probe(
+      `${name} ${version}`,
+      async () => (await capture(["asdf", "list", name])).out.includes(version) || "not installed",
+    );
   }
 
   print();
