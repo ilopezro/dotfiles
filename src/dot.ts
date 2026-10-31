@@ -1,146 +1,92 @@
+import { Command } from "commander";
 import * as casks from "@/commands/casks.ts";
 import * as defaults from "@/commands/defaults.ts";
 import { health } from "@/commands/health.ts";
 import { clean, edit, install, update } from "@/commands/setup.ts";
-import { C, error, print, STDERR, STDOUT, section } from "@/lib/colors.ts";
+import { C, colorEnabled } from "@/lib/colors.ts";
 
-type Row = [name: string, description: string];
-
-const NAME_WIDTH = 9;
-const INDENT = 2 + NAME_WIDTH + 1;
-
-// Wraps at word boundaries within the description column, so continuation lines
-// line up under the description instead of folding back to column 0.
-function wrap(text: string, width: number) {
-  const out: string[] = [];
-  let line = "";
-  for (const word of text.split(" ")) {
-    if (line && line.length + 1 + word.length > width) {
-      out.push(line);
-      line = word;
-    } else {
-      line = line ? `${line} ${word}` : word;
-    }
-  }
-  if (line) out.push(line);
-  return out;
-}
-
-function helpPage(usage: string, heading: string, rows: Row[], footer?: string, fd = STDOUT) {
-  const columns = (fd === STDERR ? process.stderr.columns : process.stdout.columns) || 80;
-  const width = Math.max(columns - INDENT, 20);
-  print(`${C.bold}Usage:${C.reset} ${usage}`, fd);
-  print("", fd);
-  section(heading, fd);
-  for (const [name, description] of rows) {
-    const [first = "", ...rest] = wrap(description, width);
-    print(`  ${C.blue}${name.padEnd(NAME_WIDTH)}${C.reset} ${first}`, fd);
-    for (const line of rest) print(`${" ".repeat(INDENT)}${line}`, fd);
-  }
-  if (footer) {
-    print("", fd);
-    print(`${C.dim}${footer}${C.reset}`, fd);
-  }
-}
-
-const COMMANDS: Row[] = [
-  [
-    "install",
-    "Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)",
-  ],
-  [
-    "update",
-    "Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins",
-  ],
-  [
-    "health",
-    "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes",
-  ],
-  ["casks", "Verify, repair, or prune Homebrew cask apps"],
-  ["defaults", "Check or apply macOS defaults from Defaultsfile"],
-  ["prune", "Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)"],
-  ["clean", "Clean up caches (brew, gem)"],
-  ["edit", "Open dotfiles in editor"],
-  ["help", "This help message"],
-];
-
-const SUBCOMMANDS = {
-  casks: {
-    usage: "dot casks <command>",
-    rows: [
-      ["check", "Report casks whose App or Binary artifacts are missing, or whose app is not owned by you"],
-      ["repair", "Reinstall missing or broken casks and reclaim root-owned apps, then re-check"],
-      ["extras", "List installed casks that are not in Caskfile"],
-      ["prune", "Uninstall casks that are not in Caskfile, asking about each (--all: one prompt for all)"],
-      ["help", "This help message"],
-    ] as Row[],
-  },
-  defaults: {
-    usage: "dot defaults <command>",
-    rows: [
-      ["check", "Report values that differ from Defaultsfile"],
-      ["apply", "Write values that differ, then restart the affected apps"],
-      ["help", "This help message"],
-    ] as Row[],
-  },
+const setExit = (ok: boolean) => {
+  process.exitCode = ok ? 0 : 1;
 };
 
-const help = () =>
-  helpPage("dot <command>", "Commands:", COMMANDS, "Run `dot <command> help` for a command's subcommands.");
+// Settings are copied into each subcommand when it is created, so this has to run
+// before any .command() call. Color follows colors.ts rather than Commander's own
+// detection, which ignores CLICOLOR_FORCE (`make demo` relies on it).
+const program = new Command("dot")
+  .description("Maintain this machine's dotfiles setup")
+  .configureHelp({
+    styleTitle: (title) => `${C.bold}${title}${C.reset}`,
+    styleCommandText: (text) => `${C.bold}${text}${C.reset}`,
+    styleSubcommandText: (text) => `${C.blue}${text}${C.reset}`,
+    styleOptionText: (text) => `${C.blue}${text}${C.reset}`,
+  })
+  .configureOutput({
+    getOutHasColors: () => colorEnabled,
+    getErrHasColors: () => colorEnabled,
+    outputError: (text, write) => write(`${C.red}${text}${C.reset}`),
+  })
+  .showHelpAfterError();
 
-// No subcommand, or `help`, is a request for help; anything else unknown is a usage error.
-function subHelp(command: keyof typeof SUBCOMMANDS, sub: string | undefined): never {
-  const { usage, rows } = SUBCOMMANDS[command];
-  const asked = sub === undefined || ["help", "-h", "--help"].includes(sub);
-  if (!asked) {
-    error(`dot ${command}: unknown command '${sub}'`, STDERR);
-    print("", STDERR);
-  }
-  helpPage(usage, "Commands:", rows, undefined, asked ? STDOUT : STDERR);
-  process.exit(asked ? 0 : 2);
-}
+program
+  .command("install")
+  .description(
+    "Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)",
+  )
+  .action(install);
 
-const exit = (ok: boolean) => process.exit(ok ? 0 : 1);
+program
+  .command("update")
+  .description(
+    "Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins",
+  )
+  .action(update);
 
-async function main(command?: string, sub?: string, ...rest: string[]) {
-  switch (command) {
-    case "install":
-      return install();
-    case "update":
-      return update();
-    case "health":
-      return health();
-    case "casks":
-      switch (sub) {
-        case "check":
-          return exit(await casks.check());
-        case "repair":
-          return exit(await casks.repair());
-        case "extras":
-          return casks.reportExtras();
-        case "prune":
-          return exit(await casks.prune(rest[0] === "--all"));
-        default:
-          return subHelp("casks", sub);
-      }
-    case "defaults":
-      switch (sub) {
-        case "check":
-          return exit(await defaults.check());
-        case "apply":
-          return exit(await defaults.apply());
-        default:
-          return subHelp("defaults", sub);
-      }
-    case "prune":
-      return exit(await casks.prune(sub === "--all"));
-    case "clean":
-      return clean();
-    case "edit":
-      return edit();
-    default:
-      return help();
-  }
-}
+program
+  .command("health")
+  .description(
+    "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes",
+  )
+  .action(health);
 
-await main(...process.argv.slice(2));
+const caskCommands = program.command("casks").description("Verify, repair, or prune Homebrew cask apps");
+caskCommands
+  .command("check")
+  .description("Report casks whose App or Binary artifacts are missing, or whose app is not owned by you")
+  .action(async () => setExit(await casks.check()));
+caskCommands
+  .command("repair")
+  .description("Reinstall missing or broken casks and reclaim root-owned apps, then re-check")
+  .action(async () => setExit(await casks.repair()));
+caskCommands.command("extras").description("List installed casks that are not in Caskfile").action(casks.reportExtras);
+caskCommands
+  .command("prune")
+  .description("Uninstall casks that are not in Caskfile, asking about each")
+  .option("--all", "Ask once for the whole list")
+  .action(async ({ all }: { all?: boolean }) => setExit(await casks.prune(!!all)));
+
+const defaultsCommands = program.command("defaults").description("Check or apply macOS defaults from Defaultsfile");
+defaultsCommands
+  .command("check")
+  .description("Report values that differ from Defaultsfile")
+  .action(async () => setExit(await defaults.check()));
+defaultsCommands
+  .command("apply")
+  .description("Write values that differ, then restart the affected apps")
+  .action(async () => setExit(await defaults.apply()));
+
+program
+  .command("prune")
+  .description("Uninstall Homebrew casks that are not in Caskfile, asking about each (same as `dot casks prune`)")
+  .option("--all", "Ask once for the whole list")
+  .action(async ({ all }: { all?: boolean }) => setExit(await casks.prune(!!all)));
+
+program.command("clean").description("Clean up caches (brew, gem)").action(clean);
+program.command("edit").description("Open dotfiles in editor").action(edit);
+
+// Commander treats a bare `dot` or `dot casks` as an error (help on stderr, exit 1).
+// Asking for the menu is not a mistake, so show it normally.
+const args = process.argv.slice(2);
+const menu = args.length === 0 ? program : program.commands.find((c) => c.name() === args[0] && c.commands.length);
+if (args.length <= 1 && menu) menu.help();
+
+await program.parseAsync();

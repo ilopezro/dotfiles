@@ -5,10 +5,10 @@
 // README GIF).
 import { writeSync } from "node:fs";
 
-const enabled =
+export const colorEnabled =
   !process.env.NO_COLOR && (!!process.env.CLICOLOR_FORCE || (!!process.stdout.isTTY && process.env.TERM !== "dumb"));
 
-const sgr = (code: string) => (enabled ? `\x1b[${code}m` : "");
+const sgr = (code: string) => (colorEnabled ? `\x1b[${code}m` : "");
 
 export const C = {
   reset: sgr("0"),
