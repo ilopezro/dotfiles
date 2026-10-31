@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { installedTarget, parseArtifacts } from "./casks.ts";
+import { installedTarget, parseArtifacts } from "@/commands/casks.ts";
 
 const info = `==> docker-desktop (Docker Desktop, Docker CE): 4.97.0,244584 (auto_updates)
 App to build and share containerised applications and microservices

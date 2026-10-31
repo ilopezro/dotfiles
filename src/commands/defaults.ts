@@ -2,10 +2,10 @@
 // `domain|key|type|value|restart`, where type is any `defaults write` type (bool,
 // int, float, string) and restart is the app to killall when the value changed
 // (`-` for none).
-import { fail, info, note, pass } from "../lib/colors.ts";
-import { readFields } from "../lib/manifest.ts";
-import { installFile } from "../lib/paths.ts";
-import { capture, run } from "../lib/proc.ts";
+import { fail, info, note, pass } from "@/lib/colors.ts";
+import { readFields } from "@/lib/manifest.ts";
+import { installFile } from "@/lib/paths.ts";
+import { capture, run } from "@/lib/proc.ts";
 
 // `defaults read` prints booleans as 1/0, so both sides are normalized before
 // comparing — otherwise `true` never equals `1` and apply re-writes every run.

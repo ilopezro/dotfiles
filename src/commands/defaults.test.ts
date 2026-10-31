@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { normalize } from "./defaults.ts";
+import { normalize } from "@/commands/defaults.ts";
 
 test("normalizes booleans so `defaults read` output compares equal", () => {
   expect(normalize("true")).toBe(normalize("1"));

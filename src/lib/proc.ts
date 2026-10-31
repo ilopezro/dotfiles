@@ -1,4 +1,4 @@
-import { STDERR, print } from "./colors.ts";
+import { STDERR, print } from "@/lib/colors.ts";
 
 type RunOptions = { cwd?: string; quietErrors?: boolean };
 

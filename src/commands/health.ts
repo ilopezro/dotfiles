@@ -1,11 +1,11 @@
 import { existsSync, lstatSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
-import { error, fail, note, pass, print, section, success } from "../lib/colors.ts";
-import { parseToolVersions, readFields, readLines, readText } from "../lib/manifest.ts";
-import { DOTFILES_DIR, HOME, expandHome, installFile } from "../lib/paths.ts";
-import { capture, has, lines, succeeds } from "../lib/proc.ts";
-import * as casks from "./casks.ts";
-import * as defaults from "./defaults.ts";
+import { error, fail, note, pass, print, section, success } from "@/lib/colors.ts";
+import { parseToolVersions, readFields, readLines, readText } from "@/lib/manifest.ts";
+import { DOTFILES_DIR, HOME, expandHome, installFile } from "@/lib/paths.ts";
+import { capture, has, lines, succeeds } from "@/lib/proc.ts";
+import * as casks from "@/commands/casks.ts";
+import * as defaults from "@/commands/defaults.ts";
 
 const isLink = (path: string) => {
   try {

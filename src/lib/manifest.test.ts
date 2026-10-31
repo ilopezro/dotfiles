@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseCaskfile, parseFields, parseLines, parseToolVersions } from "./manifest.ts";
+import { parseCaskfile, parseFields, parseLines, parseToolVersions } from "@/lib/manifest.ts";
 
 test("keeps the last entry without a trailing newline and skips blank lines", () => {
   expect(parseLines("a\n\nb\r\n  \nc")).toEqual(["a", "b", "c"]);

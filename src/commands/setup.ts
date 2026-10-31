@@ -1,10 +1,10 @@
 // install, update, clean, and edit: the commands that change the machine.
-import { DOTFILES_DIR, HOME, installFile } from "../lib/paths.ts";
-import { info, note, step, success, warn } from "../lib/colors.ts";
-import { readFields, readLines } from "../lib/manifest.ts";
-import { capture, has, lines, run, succeeds } from "../lib/proc.ts";
-import * as casks from "./casks.ts";
-import * as defaults from "./defaults.ts";
+import { DOTFILES_DIR, HOME, installFile } from "@/lib/paths.ts";
+import { info, note, step, success, warn } from "@/lib/colors.ts";
+import { readFields, readLines } from "@/lib/manifest.ts";
+import { capture, has, lines, run, succeeds } from "@/lib/proc.ts";
+import * as casks from "@/commands/casks.ts";
+import * as defaults from "@/commands/defaults.ts";
 
 const make = (target: string) => run(["make", "-C", DOTFILES_DIR, "--no-print-directory", target]);
 

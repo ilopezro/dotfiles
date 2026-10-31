@@ -1,8 +1,8 @@
-import { C, STDERR, STDOUT, error, print, section } from "./lib/colors.ts";
-import * as casks from "./commands/casks.ts";
-import * as defaults from "./commands/defaults.ts";
-import { health } from "./commands/health.ts";
-import { clean, edit, install, update } from "./commands/setup.ts";
+import { C, STDERR, STDOUT, error, print, section } from "@/lib/colors.ts";
+import * as casks from "@/commands/casks.ts";
+import * as defaults from "@/commands/defaults.ts";
+import { health } from "@/commands/health.ts";
+import { clean, edit, install, update } from "@/commands/setup.ts";
 
 type Row = [name: string, description: string];
 

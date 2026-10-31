@@ -5,10 +5,10 @@
 import { existsSync, lstatSync, readdirSync, readlinkSync, rmSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, join } from "node:path";
-import { C, STDERR, error, fail, info, note, pass, print, section, step, success, warn } from "../lib/colors.ts";
-import { parseCaskfile, readText } from "../lib/manifest.ts";
-import { HOME, installFile } from "../lib/paths.ts";
-import { capture, lines, run, succeeds } from "../lib/proc.ts";
+import { C, STDERR, error, fail, info, note, pass, print, section, step, success, warn } from "@/lib/colors.ts";
+import { parseCaskfile, readText } from "@/lib/manifest.ts";
+import { HOME, installFile } from "@/lib/paths.ts";
+import { capture, lines, run, succeeds } from "@/lib/proc.ts";
 
 export type Artifact = { kind: "app" | "bin"; value: string };
 
