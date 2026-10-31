@@ -235,7 +235,7 @@ export async function reportExtras() {
     return;
   }
   for (const cask of list) warn(`${cask} (not in Caskfile)`);
-  note("Add them to install/Caskfile to keep them, or run `dot prune` to uninstall them.");
+  note("Add them to install/Caskfile to keep them, or run `dot casks prune` to uninstall them.");
 }
 
 function confirm(question: string) {

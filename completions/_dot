@@ -8,7 +8,6 @@ _dot() {
     'health:Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code, and asdf runtimes'
     'casks:Verify, repair, or prune Homebrew cask apps'
     'defaults:Check or apply macOS defaults from Defaultsfile'
-    'prune:Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'
     'help:Show help message'
@@ -43,9 +42,6 @@ _dot() {
         )
         _describe 'defaults command' subcommands
       fi
-      ;;
-    prune)
-      _values 'option' '--all[One prompt for every cask]'
       ;;
   esac
 }

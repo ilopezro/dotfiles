@@ -74,12 +74,6 @@ defaultsCommands
   .description("Write values that differ, then restart the affected apps")
   .action(async () => setExit(await defaults.apply()));
 
-program
-  .command("prune")
-  .description("Uninstall Homebrew casks that are not in Caskfile, asking about each (same as `dot casks prune`)")
-  .option("--all", "Ask once for the whole list")
-  .action(async ({ all }: { all?: boolean }) => setExit(await casks.prune(!!all)));
-
 program.command("clean").description("Clean up caches (brew, gem)").action(clean);
 program.command("edit").description("Open dotfiles in editor").action(edit);
 
