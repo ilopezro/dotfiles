@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Lints (Biome), typechecks, and tests dot's TypeScript before any commit that
+# touches it. Enabled by `make git-hooks`. Checks the working tree, not just the
+# staged content, since a typecheck only makes sense against the whole program.
+
+changed=$(git diff --cached --name-only -- src package.json tsconfig.json biome.json bun.lock)
+[ -z "$changed" ] && exit 0
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+[ -d node_modules ] || bun install --frozen-lockfile || exit 1
+bun run check || {
+  echo ""
+  echo "pre-commit: fix the issues above (\`bun run fix\` handles formatting and imports)."
+  exit 1
+}

@@ -5,7 +5,7 @@
 import { existsSync, lstatSync, readdirSync, readlinkSync, rmSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, join } from "node:path";
-import { C, STDERR, error, fail, info, note, pass, print, section, step, success, warn } from "@/lib/colors.ts";
+import { C, error, fail, info, note, pass, print, STDERR, section, step, success, warn } from "@/lib/colors.ts";
 import { parseCaskfile, readText } from "@/lib/manifest.ts";
 import { HOME, installFile } from "@/lib/paths.ts";
 import { capture, lines, run, succeeds } from "@/lib/proc.ts";
@@ -37,15 +37,14 @@ export function parseArtifacts(text: string) {
     }
     if (line.startsWith("==> ")) {
       inArtifacts = false;
-      const header = line.match(/^==> (\S+?)(?: \([^)]*\))?: /);
-      if (header) cask = header[1]!;
+      cask = line.match(/^==> (\S+?)(?: \([^)]*\))?: /)?.[1] ?? cask;
       continue;
     }
     if (!inArtifacts || !cask) continue;
-    const artifact = line.match(/^(.*) \((App|Binary)\)$/);
-    if (!artifact) continue;
+    const [, value, type] = line.match(/^(.*) \((App|Binary)\)$/) ?? [];
+    if (!value) continue;
     const list = result.get(cask) ?? [];
-    list.push({ kind: artifact[2] === "App" ? "app" : "bin", value: artifact[1]! });
+    list.push({ kind: type === "App" ? "app" : "bin", value });
     result.set(cask, list);
   }
   return result;

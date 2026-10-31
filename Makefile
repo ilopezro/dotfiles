@@ -10,13 +10,13 @@ COLORS := . $(DOTFILES_DIR)lib/colors.sh;
 DOT_BIN := $(DOTFILES_DIR)bin/dot
 DOT_SRC := $(shell find $(DOTFILES_DIR)src -name '*.ts' ! -name '*.test.ts' 2>/dev/null) $(DOTFILES_DIR)package.json $(DOTFILES_DIR)tsconfig.json
 
-.PHONY: all macos sudo brew dot-bin packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
+.PHONY: all macos sudo brew dot-bin git-hooks packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
 
 all: macos
 
 MACOS_STEPS := dot-bin packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
                npm-tools vscode-extensions claude-mcp claude-plugins claude-skills login-items \
-               macos-defaults
+               macos-defaults git-hooks
 
 # Every step below is independently idempotent, so a failing step must not strand the
 # ones after it. As plain prerequisites, one broken cask meant `link`, `signers`, and
@@ -274,6 +274,11 @@ login-items:
 			osascript -e "tell application \"System Events\" to make login item at end with properties {path:\"$$app\", hidden:false}" >/dev/null; \
 		fi; \
 	done < $(DOTFILES_DIR)install/Loginfile
+
+# Points git at the repo's own hooks, so commits touching dot's TypeScript are
+# linted, typechecked, and tested first.
+git-hooks:
+	git -C $(DOTFILES_DIR) config core.hooksPath .githooks
 
 macos-defaults: dot-bin
 	@$(COLORS) if ! is-macos; then note "Not macOS, skipping defaults."; exit 0; fi; \

@@ -6,8 +6,7 @@
 import { writeSync } from "node:fs";
 
 const enabled =
-  !process.env.NO_COLOR &&
-  (!!process.env.CLICOLOR_FORCE || (!!process.stdout.isTTY && process.env.TERM !== "dumb"));
+  !process.env.NO_COLOR && (!!process.env.CLICOLOR_FORCE || (!!process.stdout.isTTY && process.env.TERM !== "dumb"));
 
 const sgr = (code: string) => (enabled ? `\x1b[${code}m` : "");
 
@@ -30,8 +29,10 @@ export function print(text = "", fd = STDOUT) {
   writeSync(fd, `${text}\n`);
 }
 
-const helper = (format: (msg: string) => string) => (msg: string, fd = STDOUT) =>
-  print(format(msg), fd);
+const helper =
+  (format: (msg: string) => string) =>
+  (msg: string, fd = STDOUT) =>
+    print(format(msg), fd);
 
 export const pass = helper((m) => `  ${C.green}✓${C.reset} ${m}`);
 export const fail = helper((m) => `  ${C.red}✗${C.reset} ${m}`);

@@ -121,10 +121,14 @@ Output is colored when it goes to a terminal, using the standard ANSI colors so 
 
 ```sh
 make dot-bin      # Rebuild bin/dot
-bun install       # Once, for editor types and the typechecker
+bun install       # Once, for Biome, editor types, and the typechecker
+bun run check     # Lint (Biome), typecheck, and test together
+bun run fix       # Apply formatting, import sorting, and safe lint fixes
 bun test          # Unit tests (manifest parsing, cask artifacts, defaults)
 bun run typecheck # tsc --noEmit
 ```
+
+Biome enforces the `@/` import alias and flags un-awaited promises. `make git-hooks` (part of `make`) enables a pre-commit hook that runs `bun run check` whenever a commit touches `src/` or the TypeScript config.
 
 ### Makefile targets
 
@@ -149,6 +153,7 @@ make test-link          # Round-trip link/unlink in a throwaway HOME and verify 
 make vscode-extensions  # Install VS Code extensions from Codefile
 make login-items        # Register macOS login items from Loginfile
 make macos-defaults     # Apply macOS preferences from Defaultsfile
+make git-hooks          # Enable the repo's pre-commit hook (lint, typecheck, test dot's TypeScript)
 make demo               # Re-record docs/dot-health.gif (the README demo) with VHS
 ```
 

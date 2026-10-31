@@ -1,11 +1,11 @@
 import { existsSync, lstatSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
-import { error, fail, note, pass, print, section, success } from "@/lib/colors.ts";
-import { parseToolVersions, readFields, readLines, readText } from "@/lib/manifest.ts";
-import { DOTFILES_DIR, HOME, expandHome, installFile } from "@/lib/paths.ts";
-import { capture, has, lines, succeeds } from "@/lib/proc.ts";
 import * as casks from "@/commands/casks.ts";
 import * as defaults from "@/commands/defaults.ts";
+import { error, fail, note, pass, print, section, success } from "@/lib/colors.ts";
+import { parseToolVersions, readFields, readLines, readText } from "@/lib/manifest.ts";
+import { DOTFILES_DIR, expandHome, HOME, installFile } from "@/lib/paths.ts";
+import { capture, has, lines, succeeds } from "@/lib/proc.ts";
 
 const isLink = (path: string) => {
   try {
@@ -22,8 +22,6 @@ const isDir = (path: string) => {
     return false;
   }
 };
-
-const stripAnsi = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
 
 export async function health() {
   let ok = true;
@@ -47,7 +45,9 @@ export async function health() {
 
   print();
   section("Commit signing");
-  const keyPath = expandHome((await capture(["git", "config", "user.signingkey"])).out || `${HOME}/.ssh/id_ed25519.pub`);
+  const keyPath = expandHome(
+    (await capture(["git", "config", "user.signingkey"])).out || `${HOME}/.ssh/id_ed25519.pub`,
+  );
   if (!existsSync(keyPath)) {
     check("signing key", `no key at ${keyPath}`);
   } else {
@@ -115,7 +115,9 @@ export async function health() {
   print();
   section("Claude Code skills");
   const skillSources = readLines(installFile("Skillfile"));
-  const skills = skillSources.length ? lines(stripAnsi((await capture(["npx", "--yes", "skills", "list", "-g"])).out)) : [];
+  const skills = skillSources.length
+    ? lines(Bun.stripANSI((await capture(["npx", "--yes", "skills", "list", "-g"])).out))
+    : [];
   for (const source of skillSources) {
     check(source, skills.some((line) => line.endsWith(`Source: ${source}`)) || "not installed");
   }

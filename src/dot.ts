@@ -1,8 +1,8 @@
-import { C, STDERR, STDOUT, error, print, section } from "@/lib/colors.ts";
 import * as casks from "@/commands/casks.ts";
 import * as defaults from "@/commands/defaults.ts";
 import { health } from "@/commands/health.ts";
 import { clean, edit, install, update } from "@/commands/setup.ts";
+import { C, error, print, STDERR, STDOUT, section } from "@/lib/colors.ts";
 
 type Row = [name: string, description: string];
 
@@ -44,9 +44,18 @@ function helpPage(usage: string, heading: string, rows: Row[], footer?: string, 
 }
 
 const COMMANDS: Row[] = [
-  ["install", "Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)"],
-  ["update", "Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins"],
-  ["health", "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes"],
+  [
+    "install",
+    "Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items from Loginfile, macOS defaults from Defaultsfile, MCP servers from Mcpfile, and Claude Code plugins from Pluginfile (initial setup)",
+  ],
+  [
+    "update",
+    "Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins",
+  ],
+  [
+    "health",
+    "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes",
+  ],
   ["casks", "Verify, repair, or prune Homebrew cask apps"],
   ["defaults", "Check or apply macOS defaults from Defaultsfile"],
   ["prune", "Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)"],
@@ -76,7 +85,8 @@ const SUBCOMMANDS = {
   },
 };
 
-const help = () => helpPage("dot <command>", "Commands:", COMMANDS, "Run `dot <command> help` for a command's subcommands.");
+const help = () =>
+  helpPage("dot <command>", "Commands:", COMMANDS, "Run `dot <command> help` for a command's subcommands.");
 
 // No subcommand, or `help`, is a request for help; anything else unknown is a usage error.
 function subHelp(command: keyof typeof SUBCOMMANDS, sub: string | undefined): never {
@@ -92,50 +102,45 @@ function subHelp(command: keyof typeof SUBCOMMANDS, sub: string | undefined): ne
 
 const exit = (ok: boolean) => process.exit(ok ? 0 : 1);
 
-const [command, sub, ...rest] = process.argv.slice(2);
-
-switch (command) {
-  case "install":
-    await install();
-    break;
-  case "update":
-    await update();
-    break;
-  case "health":
-    await health();
-    break;
-  case "casks":
-    switch (sub) {
-      case "check":
-        exit(await casks.check());
-      case "repair":
-        exit(await casks.repair());
-      case "extras":
-        await casks.reportExtras();
-        break;
-      case "prune":
-        exit(await casks.prune(rest[0] === "--all"));
-      default:
-        subHelp("casks", sub);
-    }
-    break;
-  case "defaults":
-    switch (sub) {
-      case "check":
-        exit(await defaults.check());
-      case "apply":
-        exit(await defaults.apply());
-      default:
-        subHelp("defaults", sub);
-    }
-  case "prune":
-    exit(await casks.prune(sub === "--all"));
-  case "clean":
-    await clean();
-    break;
-  case "edit":
-    await edit();
-    break;
-  default:
-    help();
+async function main(command?: string, sub?: string, ...rest: string[]) {
+  switch (command) {
+    case "install":
+      return install();
+    case "update":
+      return update();
+    case "health":
+      return health();
+    case "casks":
+      switch (sub) {
+        case "check":
+          return exit(await casks.check());
+        case "repair":
+          return exit(await casks.repair());
+        case "extras":
+          return casks.reportExtras();
+        case "prune":
+          return exit(await casks.prune(rest[0] === "--all"));
+        default:
+          return subHelp("casks", sub);
+      }
+    case "defaults":
+      switch (sub) {
+        case "check":
+          return exit(await defaults.check());
+        case "apply":
+          return exit(await defaults.apply());
+        default:
+          return subHelp("defaults", sub);
+      }
+    case "prune":
+      return exit(await casks.prune(sub === "--all"));
+    case "clean":
+      return clean();
+    case "edit":
+      return edit();
+    default:
+      return help();
+  }
 }
+
+await main(...process.argv.slice(2));

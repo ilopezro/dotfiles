@@ -12,7 +12,10 @@ test("splits pipe-delimited manifests", () => {
 });
 
 test("reads cask tokens, ignoring options and comments", () => {
-  expect(parseCaskfile('cask "1password"\n# cask "nope"\ncask "foo", args: { "x" => 1 }\n')).toEqual(["1password", "foo"]);
+  expect(parseCaskfile('cask "1password"\n# cask "nope"\ncask "foo", args: { "x" => 1 }\n')).toEqual([
+    "1password",
+    "foo",
+  ]);
 });
 
 test("reads .tool-versions", () => {

@@ -15,8 +15,8 @@ export function parseFields(text: string) {
 
 export function parseCaskfile(text: string) {
   return parseLines(text).flatMap((line) => {
-    const match = line.match(/^cask "([^"]+)"/);
-    return match ? [match[1]!] : [];
+    const token = line.match(/^cask "([^"]+)"/)?.[1];
+    return token ? [token] : [];
   });
 }
 
