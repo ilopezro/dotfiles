@@ -8,7 +8,7 @@ Output "dot-health.gif"
 
 # Tall enough that the full report fits on one screen; it would scroll otherwise.
 Set Width 1000
-Set Height 1760
+Set Height 1980
 Set FontSize 13
 Set FontFamily "JetBrains Mono"
 Set LineHeight 1.2
