@@ -1,0 +1,32 @@
+{
+  // Editor autocomplete and validation for this file.
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "includes": ["src/**", "*.json", "*.jsonc", "!bun.lock"] },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "nursery": {
+        // A dropped `await` compiles fine but runs steps concurrently: `brew upgrade`
+        // starting while `dot casks repair` is still reinstalling is the exact failure
+        // repair exists to prevent. Type-aware, so it follows promises across files.
+        // Mark intentional fire-and-forget calls with `void`.
+        "noFloatingPromises": "error"
+      },
+      "style": {
+        // Every import goes through the @/ alias (tsconfig `paths`), so files can move
+        // without rewriting ../ chains. `**` rather than `*`: the patterns are
+        // gitignore-style, and `*` does not cross `/`.
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              { "group": ["./**", "../**"], "message": "Import through the @/ alias (tsconfig paths) instead." }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
