@@ -30,11 +30,8 @@ quit-after-last-window-closed = true
 keybind = cmd+d=new_split:right
 keybind = cmd+shift+d=new_split:down
 keybind = cmd+enter=toggle_fullscreen
-# New tabs ask for a title. A prompted title overrides the one the shell sets
-# (Oh My Zsh rewrites it on every prompt); press Escape to keep the default.
-keybind = cmd+t=new_tab
-keybind = chain=prompt_tab_title
-# Rename the current tab at any time; submit an empty title to go back to automatic.
+# Rename the current tab. A prompted title overrides the one the shell sets (Oh My
+# Zsh rewrites it on every prompt); submit an empty title to go back to automatic.
 keybind = cmd+shift+r=prompt_tab_title
 
 # --- Updates ---
