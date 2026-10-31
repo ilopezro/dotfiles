@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](https://www.gnu.org/software/stow/) and a Makefile.
+Personal dotfiles for macOS (Apple Silicon and Intel), managed with [GNU Stow](https://www.gnu.org/software/stow/), a Makefile, and a `dot` CLI written in TypeScript and compiled with [Bun](https://bun.com).
 
 ## Packages Overview
 
@@ -45,7 +45,7 @@ Running `make` is idempotent — it's safe to run multiple times, and re-running
 
 Some steps need root — a few casks own symlinks outside the Homebrew prefix. `make` asks for your password once up front and keeps the credential warm for the whole run, so nothing stalls on a hidden prompt halfway through. With no terminal to prompt on (CI, cron, an unattended run), it says so and continues; run `sudo -v` beforehand if you want those steps to succeed.
 
-This will install Homebrew packages, cask apps, Mac App Store apps, Oh My Zsh (with plugins), symlink configs, register this machine's SSH signing key, install asdf plugins and runtimes, install Go tools, install global npm tools, install VS Code extensions, link Claude Code settings and skills, and register Claude Code MCP servers.
+The first step builds the `dot` CLI (installing Bun if needed), since later steps call it. This will install Homebrew packages, cask apps, Mac App Store apps, Oh My Zsh (with plugins), symlink configs, register this machine's SSH signing key, install asdf plugins and runtimes, install Go tools, install global npm tools, install VS Code extensions, link Claude Code settings and skills, and register Claude Code MCP servers.
 
 ## Post-Install
 
@@ -98,9 +98,11 @@ dot update
 ### `dot` CLI
 
 ```sh
-dot install   # Install packages from Brewfile, Caskfile, and Npmfile, MCP servers from Mcpfile, plugins from Pluginfile, and skills from Skillfile (initial setup)
-dot update    # Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
-dot health    # Check symlinks, commit signing, required tools, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes
+dot install   # Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items, macOS defaults, MCP servers from Mcpfile, and plugins from Pluginfile (initial setup)
+dot update    # Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
+dot health    # Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes
+dot casks     # check | repair | extras | prune [--all]: verify cask apps are really on disk, fix broken ones, or handle casks not in Caskfile
+dot defaults  # check | apply: report or fix drift from Defaultsfile
 dot prune     # Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
@@ -111,10 +113,22 @@ Output is colored when it goes to a terminal, using the standard ANSI colors so 
 
 ![dot health output](docs/dot-health.gif)
 
+### Developing `dot`
+
+`dot` lives in `src/` (entry point `src/dot.ts`) and compiles to a standalone binary at `bin/dot`. The binary is gitignored and built on each machine by `make dot-bin`, which only rebuilds when `src/` changes; `dot update` runs it after pulling. After editing the source:
+
+```sh
+make dot-bin      # Rebuild bin/dot
+bun install       # Once, for editor types and the typechecker
+bun test          # Unit tests (manifest parsing, cask artifacts, defaults)
+bun run typecheck # tsc --noEmit
+```
+
 ### Makefile targets
 
 ```sh
 make                    # Full setup (same as make macos)
+make dot-bin            # Build the dot CLI from src/ into bin/dot (only when src/ changed)
 make brew-packages      # Install Homebrew packages from Brewfile
 make cask-apps          # Install cask apps from Caskfile, then repair any whose artifacts are missing
 make mas-apps           # Install Mac App Store apps from Masfile (via mas)
@@ -139,7 +153,7 @@ make demo               # Re-record docs/dot-health.gif (the README demo) with V
 ## Customization
 
 - **Brew packages**: Add to `install/Brewfile`, then run `make brew-packages`
-- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `cask-doctor repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. It also flags apps no longer owned by you (self-updating apps like Slack can leave theirs owned by root, which breaks `brew upgrade`) and gives them back to you with `sudo chown`. `dot update` runs the same repair before `brew upgrade`. `dot health` reports the same check without changing anything, and `bin/cask-doctor check` runs it on its own. `dot health` also lists casks installed on the machine but missing from `install/Caskfile` as a warning (not a failure); add them to the Caskfile to keep them, or run `dot prune` to uninstall them. It asks about each cask individually; `dot prune --all` asks once for the whole list. Repair asks for your password up front when it needs one — some casks own symlinks outside the Homebrew prefix — and is safe to interrupt and re-run: it re-derives what is still broken on every invocation
+- **Cask apps**: Add to `install/Caskfile`, then run `make cask-apps`. A cask whose app was deleted out from under Homebrew (usually by an upgrade that failed partway) still reads as installed to `brew bundle`, so `make cask-apps` follows the bundle with `dot casks repair`, which checks that each cask's App and Binary artifacts really exist and reinstalls the ones that don't. It also flags apps no longer owned by you (self-updating apps like Slack can leave theirs owned by root, which breaks `brew upgrade`) and gives them back to you with `sudo chown`. `dot update` runs the same repair before `brew upgrade`. `dot health` reports the same check without changing anything, and `dot casks check` runs it on its own. `dot health` also lists casks installed on the machine but missing from `install/Caskfile` as a warning (not a failure); add them to the Caskfile to keep them, or run `dot prune` to uninstall them. It asks about each cask individually; `dot prune --all` asks once for the whole list. Repair asks for your password up front when it needs one — some casks own symlinks outside the Homebrew prefix — and is safe to interrupt and re-run: it re-derives what is still broken on every invocation
 - **Mac App Store apps**: Add a `Name|id` line to `install/Masfile` (find the id with `mas search "Name"`), then run `make mas-apps`
 - **VS Code extensions**: Add to `install/Codefile`, then run `make vscode-extensions`
 - **asdf runtimes**: Edit `runcom/.tool-versions`, then run `make asdf-plugins`
@@ -148,7 +162,7 @@ make demo               # Re-record docs/dot-health.gif (the README demo) with V
 - **Claude Code plugins**: Add a `plugin@marketplace|source` line to `install/Pluginfile`, then run `make claude-plugins`
 - **Claude Code skills** (third-party skill packages, installed via the [`skills` CLI](https://www.npmjs.com/package/skills)): Add a GitHub `owner/repo` line to `install/Skillfile`, then run `make claude-skills`. A source can install multiple skills at once — run `npx skills add -g -s '*' -l <source>` first to see what it would install. To pull updates for already-installed skills, run `npx skills update -g`
 - **Login items** (apps that open at login): Add the app's full `.app` path to `install/Loginfile`, then run `make login-items`. Items are added via System Events (login items live in the Background Task Management database, which `defaults` can't write), so the first run prompts once for Automation permission. Apps not yet installed are skipped; `dot health` checks each entry
-- **macOS defaults** (Dock, Finder, and other `defaults`-backed settings): Add a `domain|key|type|value|restart` line to `install/Defaultsfile` (e.g. `com.apple.dock|autohide|bool|true|Dock`), then run `make macos-defaults`. Only values that differ are written, and the restart app (`-` for none) is only killed when something changed. `dot health` reports drift via `bin/macos-defaults check`
+- **macOS defaults** (Dock, Finder, and other `defaults`-backed settings): Add a `domain|key|type|value|restart` line to `install/Defaultsfile` (e.g. `com.apple.dock|autohide|bool|true|Dock`), then run `make macos-defaults`. Only values that differ are written, and the restart app (`-` for none) is only killed when something changed. `dot health` reports drift via `dot defaults check`
 - **Individual symlinks** (anything not stowed): Add a `source|destination` line to `install/Linkfile`, then run `make link-files`. `make link`, `make unlink`, `dot health`, and `make test-link` all read this file, so one line is all it takes
 - **Aliases**: Edit `system/.alias`
 - **Functions**: Edit `system/.function`

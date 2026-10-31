@@ -1,17 +1,51 @@
 #compdef dot
 
 _dot() {
-  local -a commands
+  local -a commands subcommands
   commands=(
-    'install:Install packages from Brewfile, Caskfile, Masfile, Npmfile, and Pluginfile'
-    'update:Update dotfiles, Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins'
-    'health:Check symlinks, required tools, Claude Code plugins, and asdf runtimes'
+    'install:Install packages, login items, macOS defaults, MCP servers, and Claude Code plugins (initial setup)'
+    'update:Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins'
+    'health:Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code, and asdf runtimes'
+    'casks:Verify, repair, or prune Homebrew cask apps'
+    'defaults:Check or apply macOS defaults from Defaultsfile'
     'prune:Uninstall Homebrew casks that are not in Caskfile, asking about each (--all: one prompt for all)'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'
     'help:Show help message'
   )
-  _describe 'command' commands
+
+  if (( CURRENT == 2 )); then
+    _describe 'command' commands
+    return
+  fi
+
+  case "$words[2]" in
+    casks)
+      if (( CURRENT == 3 )); then
+        subcommands=(
+          'check:Report casks whose artifacts are missing or not owned by you'
+          'repair:Reinstall or reclaim broken casks, then re-check'
+          'extras:List installed casks that are not in Caskfile'
+          'prune:Uninstall casks that are not in Caskfile'
+        )
+        _describe 'casks command' subcommands
+      elif [[ "$words[3]" == prune ]]; then
+        _values 'option' '--all[One prompt for every cask]'
+      fi
+      ;;
+    defaults)
+      if (( CURRENT == 3 )); then
+        subcommands=(
+          'check:Report drift from Defaultsfile'
+          'apply:Write values that differ and restart affected apps'
+        )
+        _describe 'defaults command' subcommands
+      fi
+      ;;
+    prune)
+      _values 'option' '--all[One prompt for every cask]'
+      ;;
+  esac
 }
 
 _dot "$@"

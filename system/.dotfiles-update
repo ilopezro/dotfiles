@@ -13,6 +13,13 @@ _dotfiles_update() {
   [[ -t 1 ]] || return
   command git --version &>/dev/null || return
 
+  # bin/dot is a gitignored build, so a fresh pull (or the move from the old shell
+  # script) can leave it missing until it is built once.
+  if [[ ! -x "$DOTFILES_DIR/bin/dot" ]] && command -v bun &>/dev/null; then
+    echo "[dotfiles] Building dot..."
+    make -C "$DOTFILES_DIR" --no-print-directory dot-bin >/dev/null || echo "[dotfiles] Build failed. Run \`make -C ~/dotfiles dot-bin\` to see why."
+  fi
+
   # Ensure cache dir exists
   mkdir -p "$CACHE_DIR"
 

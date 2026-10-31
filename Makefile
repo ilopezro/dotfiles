@@ -7,12 +7,14 @@ LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 # Recipes that print status source the shared helpers so make output matches dot.
 COLORS := . $(DOTFILES_DIR)lib/colors.sh;
+DOT_BIN := $(DOTFILES_DIR)bin/dot
+DOT_SRC := $(shell find $(DOTFILES_DIR)src -name '*.ts' ! -name '*.test.ts' 2>/dev/null) $(DOTFILES_DIR)package.json $(DOTFILES_DIR)tsconfig.json
 
-.PHONY: all macos sudo brew packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
+.PHONY: all macos sudo brew dot-bin packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
 
 all: macos
 
-MACOS_STEPS := packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
+MACOS_STEPS := dot-bin packages oh-my-zsh safe-chain link signers asdf-plugins go-tools \
                npm-tools vscode-extensions claude-mcp claude-plugins claude-skills login-items \
                macos-defaults
 
@@ -63,15 +65,29 @@ brew:
 
 packages: brew-packages cask-apps mas-apps
 
+# `dot` is TypeScript compiled into a standalone binary by bun. It is built here, not
+# committed: every rebuild would add a ~60MB blob to history. Rebuilt only when src/
+# changes. Built to a temp file and renamed into place, because overwriting the
+# binary in place while `dot update` is running it gets that process killed by macOS
+# code signing. `bun build --compile` also leaves a binary-sized .*.bun-build temp
+# file in the working directory, so that is cleared after each build.
+dot-bin: $(DOT_BIN)
+
+$(DOT_BIN): $(DOT_SRC) | brew
+	@$(COLORS) if ! command -v bun >/dev/null 2>&1; then info "Installing bun..."; brew install bun; fi
+	@$(COLORS) step "Building dot..."
+	@cd $(DOTFILES_DIR) && bun build --compile src/dot.ts --outfile bin/.dot.tmp && mv bin/.dot.tmp bin/dot; \
+		status=$$?; rm -f $(DOTFILES_DIR).*.bun-build; exit $$status
+
 brew-packages: brew
 	brew bundle --file=$(DOTFILES_DIR)install/Brewfile
 
 # `brew bundle` trusts its own receipts, so a cask whose app was deleted by a failed
 # upgrade still reports as installed. Let bundle do the bulk work, then let
-# cask-doctor find and reinstall anything whose artifacts are actually missing.
-cask-apps: brew sudo
+# `dot casks repair` find and reinstall anything whose artifacts are actually missing.
+cask-apps: brew sudo dot-bin
 	brew bundle --file=$(DOTFILES_DIR)install/Caskfile || true
-	cask-doctor repair
+	dot casks repair
 
 mas-apps: brew-packages
 	@$(COLORS) while IFS='|' read -r name id || [ -n "$$name" ]; do \
@@ -259,9 +275,9 @@ login-items:
 		fi; \
 	done < $(DOTFILES_DIR)install/Loginfile
 
-macos-defaults:
+macos-defaults: dot-bin
 	@$(COLORS) if ! is-macos; then note "Not macOS, skipping defaults."; exit 0; fi; \
-	macos-defaults apply
+	dot defaults apply
 
 unlink:
 	stow -d $(STOW_DIR) -t $(HOME) -D runcom
@@ -307,7 +323,7 @@ vscode-extensions:
 
 # Re-records docs/dot-health.gif. Captures a real run first because the checks are
 # too slow, and the login-items check needs permissions, to run inside VHS itself.
-demo:
+demo: dot-bin
 	@$(COLORS) command -v vhs >/dev/null 2>&1 || { error "vhs not found: brew install vhs"; exit 1; }
 	CLICOLOR_FORCE=1 $(DOTFILES_DIR)bin/dot health > $(DOTFILES_DIR)docs/.dot-health.ansi
 	cd $(DOTFILES_DIR)docs && vhs dot-health.tape

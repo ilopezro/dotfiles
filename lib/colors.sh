@@ -1,5 +1,5 @@
-# Shared output helpers for bin/dot, bin/cask-doctor, bin/macos-defaults, and the
-# Makefile.
+# Shared output helpers for the Makefile. src/lib/colors.ts mirrors them for `dot`,
+# so keep the two in sync.
 # Sourced, not executed. Uses the 16 ANSI colors so the terminal theme (Catppuccin
 # via Ghostty) decides the actual shades and follows light/dark switches. Color is
 # off when stdout is not a terminal or NO_COLOR is set; CLICOLOR_FORCE=1 keeps it

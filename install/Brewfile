@@ -1,6 +1,7 @@
 brew "asdf"
 brew "aws-vault"
 brew "awscli"
+brew "bun"
 brew "gh"
 brew "golangci-lint"
 brew "magic-wormhole"
