@@ -116,7 +116,7 @@ Output is colored when it goes to a terminal, using the standard ANSI colors so 
 
 ### Developing `dot`
 
-`dot` lives in `src/` (entry point `src/dot.ts`) and compiles to a standalone binary at `bin/dot`. The binary is gitignored and built on each machine by `make dot-bin`, which only rebuilds when `src/` changes; `dot update` runs it after pulling. After editing the source:
+`dot` lives in `src/` (entry point `src/dot.ts`) and compiles to a standalone binary at `.build/dot` (gitignored). `bin/dot` is a small committed shim that rebuilds that binary whenever it is missing or older than `src/`, so after a pull or an edit the next `dot` call just works — there is no manual build step. Building installs Bun if needed and enables the pre-commit hook. To build or check explicitly:
 
 ```sh
 make dot-bin      # Rebuild bin/dot
@@ -127,7 +127,7 @@ bun test          # Unit tests (manifest parsing, cask artifacts, defaults)
 bun run typecheck # tsc --noEmit
 ```
 
-Biome enforces the `@/` import alias and flags un-awaited promises. `make git-hooks` (part of `make`) enables a pre-commit hook that runs `bun run check` whenever a commit touches `src/` or the TypeScript config.
+Biome enforces the `@/` import alias and flags un-awaited promises. A pre-commit hook runs `bun run check` whenever a commit touches `src/` or the TypeScript config. It is enabled automatically whenever `dot` is built, and `dot health` flags it if it is off.
 
 ### Makefile targets
 

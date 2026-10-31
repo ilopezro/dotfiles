@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Entry point for `dot`. The CLI is TypeScript (src/), compiled by `make dot-bin`
+# into the gitignored .build/dot. Rebuilds first whenever that binary is missing or
+# older than its sources, so pulling new code never needs a manual build step.
+
+DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+BIN="$DOTFILES_DIR/.build/dot"
+
+if [ ! -x "$BIN" ] || [ -n "$(find "$DOTFILES_DIR/src" "$DOTFILES_DIR/package.json" "$DOTFILES_DIR/tsconfig.json" "$DOTFILES_DIR/bun.lock" -newer "$BIN" -print -quit 2>/dev/null)" ]; then
+  make -C "$DOTFILES_DIR" --no-print-directory dot-bin >&2 || exit 1
+fi
+
+exec "$BIN" "$@"

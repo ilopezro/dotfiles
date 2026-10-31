@@ -47,7 +47,7 @@ export async function health() {
   }
 
   print();
-  section("Commit signing");
+  section("Commits");
   const keyPath = expandHome(
     (await capture(["git", "config", "user.signingkey"])).out || `${HOME}/.ssh/id_ed25519.pub`,
   );
@@ -58,6 +58,8 @@ export async function health() {
     const signers = readText(join(DOTFILES_DIR, "config/git/allowed_signers"));
     check("key trusted in allowed_signers", signers.includes(key) || "run `make signers`");
   }
+  const hooksPath = (await capture(["git", "-C", DOTFILES_DIR, "config", "core.hooksPath"])).out;
+  check("pre-commit hook enabled", hooksPath === ".githooks" || "run `make git-hooks`");
 
   print();
   section("Tools");

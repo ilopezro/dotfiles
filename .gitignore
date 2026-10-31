@@ -1,6 +1,5 @@
 /config/git/local
 /docs/.dot-health.ansi
-/bin/dot
-/bin/.dot.tmp
+/.build/
 /node_modules/
 *.bun-build

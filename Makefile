@@ -7,8 +7,8 @@ LINKFILE := $(DOTFILES_DIR)install/Linkfile
 export PATH := $(DOTFILES_DIR)bin:$(PATH)
 # Recipes that print status source the shared helpers so make output matches dot.
 COLORS := . $(DOTFILES_DIR)lib/colors.sh;
-DOT_BIN := $(DOTFILES_DIR)bin/dot
-DOT_SRC := $(shell find $(DOTFILES_DIR)src -name '*.ts' ! -name '*.test.ts' 2>/dev/null) $(DOTFILES_DIR)package.json $(DOTFILES_DIR)tsconfig.json
+DOT_BIN := $(DOTFILES_DIR).build/dot
+DOT_SRC := $(shell find $(DOTFILES_DIR)src -name '*.ts' ! -name '*.test.ts' 2>/dev/null) $(DOTFILES_DIR)package.json $(DOTFILES_DIR)tsconfig.json $(DOTFILES_DIR)bun.lock
 
 .PHONY: all macos sudo brew dot-bin git-hooks packages brew-packages cask-apps mas-apps oh-my-zsh safe-chain asdf-plugins go-tools npm-tools link stow-runcom stow-config link-vscode link-claude unlink link-files test-link vscode-extensions claude-mcp claude-plugins claude-skills signers login-items macos-defaults demo
 
@@ -65,18 +65,22 @@ brew:
 
 packages: brew-packages cask-apps mas-apps
 
-# `dot` is TypeScript compiled into a standalone binary by bun. It is built here, not
-# committed: every rebuild would add a ~60MB blob to history. Rebuilt only when src/
-# changes. Built to a temp file and renamed into place, because overwriting the
+# `dot` is TypeScript compiled into a standalone binary by bun at .build/dot. It is
+# built here, not committed: every rebuild would add a ~60MB blob to history. Rebuilt
+# only when src/ changes. bin/dot is a committed shim that runs this target itself
+# when the binary is missing or stale, so a pull never needs a manual build. Building
+# also points git at the repo's hooks, so that needs no manual step either. Built to a temp file and renamed into place, because overwriting the
 # binary in place while `dot update` is running it gets that process killed by macOS
 # code signing. `bun build --compile` also leaves a binary-sized .*.bun-build temp
 # file in the working directory, so that is cleared after each build.
-dot-bin: $(DOT_BIN)
+dot-bin: $(DOT_BIN) git-hooks
 
 $(DOT_BIN): $(DOT_SRC) | brew
 	@$(COLORS) if ! command -v bun >/dev/null 2>&1; then info "Installing bun..."; brew install bun; fi
 	@$(COLORS) step "Building dot..."
-	@cd $(DOTFILES_DIR) && bun build --compile src/dot.ts --outfile bin/.dot.tmp && mv bin/.dot.tmp bin/dot; \
+	@cd $(DOTFILES_DIR) && bun install --frozen-lockfile --silent
+	@mkdir -p $(DOTFILES_DIR).build
+	@cd $(DOTFILES_DIR) && bun build --compile src/dot.ts --outfile .build/dot.tmp && mv .build/dot.tmp .build/dot; \
 		status=$$?; rm -f $(DOTFILES_DIR).*.bun-build; exit $$status
 
 brew-packages: brew
@@ -278,7 +282,7 @@ login-items:
 # Points git at the repo's own hooks, so commits touching dot's TypeScript are
 # linted, typechecked, and tested first.
 git-hooks:
-	git -C $(DOTFILES_DIR) config core.hooksPath .githooks
+	@git -C $(DOTFILES_DIR) config core.hooksPath .githooks
 
 macos-defaults: dot-bin
 	@$(COLORS) if ! is-macos; then note "Not macOS, skipping defaults."; exit 0; fi; \
