@@ -21,12 +21,15 @@ Set MarginFill "#b4befe"
 Set BorderRadius 10
 Set Shell "bash"
 
+# Replays the capture line by line, pausing at each blank line between sections, so
+# the report builds up the way a live run does instead of appearing all at once.
 Hide
-Type `dot() { cat .dot-health.ansi; }; clear`
+Type `dot() { while IFS= read -r l; do printf '%s\n' "$l"; if [ -z "$l" ]; then sleep 0.35; else sleep 0.05; fi; done < .dot-health.ansi; }; clear`
 Enter
 Show
 
 Type "dot health"
 Sleep 500ms
 Enter
-Sleep 6s
+# Long enough for the replay (~9s) plus a pause on the finished report.
+Sleep 16s
