@@ -4,8 +4,32 @@ import * as defaults from "./commands/defaults.ts";
 import { health } from "./commands/health.ts";
 import { clean, edit, install, update } from "./commands/setup.ts";
 
-const helpCmd = (name: string, description: string) =>
-  print(`  ${C.blue}${name.padEnd(9)}${C.reset} ${description}`);
+const NAME_WIDTH = 9;
+const INDENT = 2 + NAME_WIDTH + 1;
+
+// Wraps at word boundaries within the description column, so continuation lines
+// line up under the description instead of folding back to column 0.
+function wrap(text: string, width: number) {
+  const out: string[] = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    if (line && line.length + 1 + word.length > width) {
+      out.push(line);
+      line = word;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+function helpCmd(name: string, description: string) {
+  const width = Math.max((process.stdout.columns || 80) - INDENT, 20);
+  const [first = "", ...rest] = wrap(description, width);
+  print(`  ${C.blue}${name.padEnd(NAME_WIDTH)}${C.reset} ${first}`);
+  for (const line of rest) print(`${" ".repeat(INDENT)}${line}`);
+}
 
 function help() {
   print(`${C.bold}Usage:${C.reset} dot <command>`);
