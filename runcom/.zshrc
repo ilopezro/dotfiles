@@ -15,6 +15,14 @@ fpath=($HOME/dotfiles/completions /opt/homebrew/share/zsh/site-functions ${ASDF_
 source $ZSH/oh-my-zsh.sh
 
 zstyle ':completion:*' menu select
+# `make <Tab>` offers only runnable targets, in any project. Without these, zsh also
+# lists every variable (for `make VAR=value`) and every file, and it reads the
+# Makefile as raw text, so a rule named `$(VAR):` shows up unexpanded. call-command
+# asks make itself (`make -nsp`, a dry run) for the evaluated target list instead;
+# path-like and dot-prefixed targets are build files and internals, not commands.
+zstyle ':completion:*:*:make:*' tag-order 'targets'
+zstyle ':completion:*:make:*:targets' call-command true
+zstyle ':completion:*:*:make:*:targets' ignored-patterns '*/*' '.*'
 
 # Source dotfiles system config
 for DOTFILE in "$HOME/dotfiles/system"/.*; do
