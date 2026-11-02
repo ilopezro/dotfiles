@@ -100,7 +100,7 @@ dot update
 ```sh
 dot install   # Install packages from Brewfile, Caskfile, Masfile, and Npmfile, login items, macOS defaults, MCP servers from Mcpfile, and plugins from Pluginfile (initial setup)
 dot update    # Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins
-dot health    # Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes
+dot health    # Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes (--fix runs the fixes)
 dot casks     # check | repair | extras | prune [--all]: verify cask apps are really on disk, fix broken ones, or handle casks not in Caskfile
 dot defaults  # check | apply: report or fix drift from Defaultsfile
 dot clean     # Clean up caches (Homebrew, gem)
@@ -111,6 +111,8 @@ dot help      # Show available commands
 `dot casks` and `dot defaults` with no subcommand list their own subcommands; `--help` (or `dot help <command>`) works on any command.
 
 Output is colored when it goes to a terminal, using the standard ANSI colors so your terminal theme (Catppuccin in Ghostty) picks the shades and follows light/dark switches. Piped output is plain; set `NO_COLOR=1` to turn color off entirely.
+
+When a check fails, `dot health` ends with the exact commands that fix it (e.g. `make -C ~/dotfiles link-files`, `dot casks repair`), which work from any directory, and exits 1, so scripts can use `dot health || ...`. `dot health --fix` runs those commands for you, then checks again.
 
 ![dot health output](docs/dot-health.gif)
 

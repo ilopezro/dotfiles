@@ -1,4 +1,5 @@
 import { print, STDERR } from "@/lib/colors.ts";
+import { DOTFILES_DIR } from "@/lib/paths.ts";
 
 type RunOptions = { cwd?: string; quietErrors?: boolean };
 
@@ -16,6 +17,8 @@ export async function run(cmd: string[], { cwd, quietErrors = false }: RunOption
     return false;
   }
 }
+
+export const make = (target: string) => run(["make", "-C", DOTFILES_DIR, "--no-print-directory", target]);
 
 export async function capture(cmd: string[]) {
   try {

@@ -46,7 +46,8 @@ program
   .description(
     "Check symlinks, commit signing, required tools, cask apps (and casks not in Caskfile), macOS defaults, login items, Claude Code plugins, and asdf runtimes",
   )
-  .action(health);
+  .option("--fix", "Run the fix for every failed check, then check again")
+  .action(async ({ fix }: { fix?: boolean }) => setExit(await health({ fix: !!fix })));
 
 const caskCommands = program.command("casks").description("Verify, repair, or prune Homebrew cask apps");
 caskCommands

@@ -43,6 +43,9 @@ _dot() {
         _describe 'defaults command' subcommands
       fi
       ;;
+    health)
+      _values 'option' '--fix[Run the fix for every failed check, then check again]'
+      ;;
   esac
 }
 

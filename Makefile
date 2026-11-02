@@ -337,7 +337,8 @@ vscode-extensions:
 demo: dot-bin
 	@$(COLORS) command -v vhs >/dev/null 2>&1 || { error "vhs not found: brew install vhs"; exit 1; }
 	@# script reads the controlling terminal from stdin; without one (an unattended run)
-	@# it fails on tcgetattr, so give it /dev/null instead.
+	@# it fails on tcgetattr, so give it /dev/null instead. A failing check exits 1, but
+	@# that is still a recording worth playing back.
 	@if [ -t 0 ]; then in=/dev/stdin; else in=/dev/null; fi; \
-		script -q -r $(DOTFILES_DIR)docs/.dot-health.rec $(DOTFILES_DIR)bin/dot health < $$in
+		script -q -r $(DOTFILES_DIR)docs/.dot-health.rec $(DOTFILES_DIR)bin/dot health < $$in || true
 	cd $(DOTFILES_DIR)docs && vhs dot-health.tape

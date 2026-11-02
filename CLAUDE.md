@@ -16,6 +16,8 @@ Whenever new functionality is added, update all relevant documentation points:
 
 ## dot health
 
+Every check in `src/commands/health.ts` names the `Fix` that resolves it (usually `makeFix("<target>")`). Failed runs list each fix's command once, and `dot health --fix` runs them all and then re-checks. A new check needs a fix too, and its target must be idempotent, since `--fix` may run it on a machine that is mostly set up already.
+
 Individual symlinks need no `dot health` change — add a `source|destination` line to `install/Linkfile` and `make link`, `make unlink`, `dot health`, and `make test-link` all pick it up. Never hardcode an individual symlink path in more than one place; that drift is what `install/Linkfile` exists to prevent.
 
 Cask apps need no `dot health` change either — add a `cask "name"` line to `install/Caskfile` and `make cask-apps`, `dot install`, and `dot health` all pick it up through `dot casks`.

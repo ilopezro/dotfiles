@@ -5,9 +5,7 @@ import * as defaults from "@/commands/defaults.ts";
 import { info, note, step, success, warn } from "@/lib/colors.ts";
 import { readFields, readLines } from "@/lib/manifest.ts";
 import { DOTFILES_DIR, HOME, installFile } from "@/lib/paths.ts";
-import { capture, has, lines, run, succeeds } from "@/lib/proc.ts";
-
-const make = (target: string) => run(["make", "-C", DOTFILES_DIR, "--no-print-directory", target]);
+import { capture, has, lines, make, run, succeeds } from "@/lib/proc.ts";
 
 async function installPlugins() {
   for (const [plugin = "", source = ""] of readFields(installFile("Pluginfile"))) {
