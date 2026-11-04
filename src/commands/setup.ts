@@ -101,7 +101,9 @@ export async function update() {
   // Reclaim root-owned apps and restore missing artifacts first, or the upgrade
   // trips over them.
   await casks.repair();
-  await run(["brew", "upgrade"]);
+  // Plain `brew upgrade` skips auto_updates casks, trusting the app's own updater.
+  // That updater can be off or on another channel, so the cask never moves.
+  await run(["brew", "upgrade", "--greedy-auto-updates"]);
 
   step("[3/6] Updating Oh My Zsh...");
   await run([`${process.env.ZSH ?? `${HOME}/.oh-my-zsh`}/tools/upgrade.sh`]);
