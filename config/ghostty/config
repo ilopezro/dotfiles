@@ -33,8 +33,3 @@ keybind = cmd+enter=toggle_fullscreen
 # Rename the current tab. A prompted title overrides the one the shell sets (Oh My
 # Zsh rewrites it on every prompt); submit an empty title to go back to automatic.
 keybind = cmd+shift+r=prompt_tab_title
-
-# --- Updates ---
-# Temporary: tip channel for the macOS 27 tabs titlebar fix (ghostty#13069).
-# Remove once the fix ships in a stable release.
-auto-update-channel = tip
