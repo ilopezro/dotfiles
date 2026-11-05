@@ -235,6 +235,80 @@ export async function repair() {
   return check();
 }
 
+// Compares dotted versions numerically. Anything after a comma is a build id
+// (docker-desktop's "4.98.0,245422"), and non-digits only separate segments, so the
+// app's "7.2.5 (90525)" matches the cask's "7.2.5.90525".
+export function compareVersions(a: string, b: string) {
+  const parse = (v: string) => (v.split(",")[0]?.match(/\d+/g) ?? []).map(Number);
+  const [x, y] = [parse(a), parse(b)];
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const diff = (x[i] ?? 0) - (y[i] ?? 0);
+    if (diff !== 0) return Math.sign(diff);
+  }
+  return 0;
+}
+
+type CaskJson = {
+  token: string;
+  version: string;
+  auto_updates?: boolean | null;
+  artifacts: Record<string, unknown[]>[];
+};
+
+// Where a cask's app bundle may live: its App artifacts, or for pkg casks (OneDrive,
+// Zoom) the .app paths its uninstall stanza deletes.
+export function appCandidates(cask: CaskJson) {
+  const paths: string[] = [];
+  for (const artifact of cask.artifacts) {
+    if (artifact.app) {
+      const [source, options] = artifact.app as [string, { target?: string }?];
+      const name = basename(options?.target ?? source);
+      paths.push(join("/Applications", name), join(HOME, "Applications", name));
+    }
+    for (const stanza of (artifact.uninstall ?? []) as { delete?: string | string[] }[]) {
+      paths.push(...[stanza.delete ?? []].flat().filter((p) => p.endsWith(".app") && !p.includes("*")));
+    }
+  }
+  return paths;
+}
+
+async function appVersion(cask: CaskJson) {
+  const path = appCandidates(cask).find((p) => existsSync(p));
+  if (!path) return undefined;
+  const plist = join(path, "Contents", "Info.plist");
+  return (await capture(["plutil", "-extract", "CFBundleShortVersionString", "raw", "-o", "-", plist])).out || null;
+}
+
+// Homebrew judges an auto_updates cask outdated from its own receipt, never from the
+// app on disk. Once the app's updater has moved past the cask definition, a greedy
+// upgrade installs the older release over it; OneDrive then refuses to open a sync
+// database written by the newer build. So only upgrade the ones whose app really is
+// older than the cask, or is missing entirely.
+export async function upgradeSelfUpdating() {
+  const outdated = await spin("Checking self-updating casks", async () => {
+    const json = (await capture(["brew", "outdated", "--cask", "--greedy-auto-updates", "--json=v2"])).out;
+    const names: string[] = (JSON.parse(json || "{}").casks ?? []).map((c: { name: string }) => c.name);
+    if (names.length === 0) return [];
+    const info = JSON.parse((await capture(["brew", "info", "--cask", "--json=v2", ...names])).out || "{}");
+    const casks: CaskJson[] = (info.casks ?? []).filter((c: CaskJson) => c.auto_updates);
+    return Promise.all(casks.map(async (cask) => ({ cask, app: await appVersion(cask) })));
+  });
+
+  const upgrade: string[] = [];
+  for (const { cask, app } of outdated) {
+    if (app === undefined || (app !== null && compareVersions(app, cask.version) < 0)) {
+      upgrade.push(cask.token);
+    } else if (app === null) {
+      warn(`${cask.token}: could not read the installed app's version, leaving it to its own updater`);
+    } else {
+      note(`${cask.token}: app is already at ${app} (cask has ${cask.version}), skipping`);
+    }
+  }
+
+  if (upgrade.length === 0) return true;
+  return run(["brew", "upgrade", "--cask", "--greedy-auto-updates", ...upgrade]);
+}
+
 // Extras are reported, never treated as failures: a one-off install is allowed, it
 // just should not go unnoticed.
 export async function reportExtras() {

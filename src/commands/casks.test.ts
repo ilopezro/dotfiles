@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { installedTarget, parseArtifacts } from "@/commands/casks.ts";
+import { appCandidates, compareVersions, installedTarget, parseArtifacts } from "@/commands/casks.ts";
 
 const info = `==> docker-desktop (Docker Desktop, Docker CE): 4.97.0,244584 (auto_updates)
 App to build and share containerised applications and microservices
@@ -26,4 +26,22 @@ test("collects App and Binary artifacts per cask", () => {
 test("checks the target of a source -> target artifact, keeping its directory", () => {
   expect(installedTarget("/Applications/Docker.app/x/docker -> /usr/local/bin/docker")).toBe("/usr/local/bin/docker");
   expect(installedTarget("Slack.app")).toBe("Slack.app");
+});
+
+test("compares versions numerically, ignoring build ids and separators", () => {
+  expect(compareVersions("26.195.1006", "26.189.0928.0009")).toBe(1);
+  expect(compareVersions("4.98.0", "4.98.0,245422")).toBe(0);
+  expect(compareVersions("7.2.5 (90525)", "7.2.5.90525")).toBe(0);
+  expect(compareVersions("1.3", "1.3.1")).toBe(-1);
+});
+
+test("finds app bundles from App artifacts and pkg uninstall stanzas", () => {
+  const cask = (artifacts: Record<string, unknown[]>[]) => ({ token: "x", version: "1", artifacts });
+  expect(appCandidates(cask([{ app: ["Slack.app"] }]))[0]).toBe("/Applications/Slack.app");
+  expect(appCandidates(cask([{ app: ["a.app", { target: "B.app" }] }]))[0]).toBe("/Applications/B.app");
+  expect(
+    appCandidates(
+      cask([{ uninstall: [{ delete: ["/Applications/OneDrive.app", "/Library/Logs/x", "/Applications/*.app"] }] }]),
+    ),
+  ).toEqual(["/Applications/OneDrive.app"]);
 });
