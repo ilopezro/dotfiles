@@ -75,6 +75,23 @@ if [ -n "$rate_7d" ]; then
   [ -n "$reset_7d" ] && rate_info="${rate_info} ${CYAN}($(fmt_until "$reset_7d"))${RESET}"
 fi
 
+# Line 2's label is resolved up front so both lines pad to the same width and their first | lines up
+dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
+[ -z "$dir" ] && dir="$PWD"
+rel=""
+if toplevel=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+  name=$(basename "$toplevel")
+  rel=${dir#"$toplevel"}
+  [ "$rel" = "$dir" ] && rel=""
+else
+  toplevel=""
+  name=$(basename "$dir")
+fi
+label="${name}${rel}"
+width=$(( ${#model} > ${#label} ? ${#model} : ${#label} ))
+model_pad=$(printf '%*s' $(( width - ${#model} )) '')
+label_pad=$(printf '%*s' $(( width - ${#label} )) '')
+
 if [ -n "$used" ] && [ -n "$remaining" ]; then
   used_int=$(printf "%.0f" "$used")
   remaining_int=$(printf "%.0f" "$remaining")
@@ -98,16 +115,52 @@ if [ -n "$used" ] && [ -n "$remaining" ]; then
   fi
 
   bar=$(build_bar "$used_int")
-  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${USED_COLOR}%s${BLUE}]${RESET} ${USED_COLOR}%s%%${RESET} used / ${REMAINING_COLOR}%s%%${RESET} remaining  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" \
-    "$model" "$bar" "$used_int" "$remaining_int" "$cost_fmt"
+  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}%s  ${BLUE}|${RESET}  ${BLUE}[${USED_COLOR}%s${BLUE}]${RESET} ${USED_COLOR}%s%%${RESET} used / ${REMAINING_COLOR}%s%%${RESET} remaining  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" \
+    "$model" "$model_pad" "$bar" "$used_int" "$remaining_int" "$cost_fmt"
   if [ -n "$rate_info" ]; then
     printf "  ${BLUE}|${RESET}  "
     printf "%b" "$rate_info"
   fi
 else
-  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}  ${BLUE}|${RESET}  ${BLUE}[${YELLOW}-------------------${BLUE}]${RESET} no usage yet  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" "$model" "$cost_fmt"
+  printf "${GREEN}➜${RESET}  ${CYAN}%s${RESET}%s  ${BLUE}|${RESET}  ${BLUE}[${YELLOW}-------------------${BLUE}]${RESET} no usage yet  ${BLUE}|${RESET}  ${YELLOW}%s${RESET}" "$model" "$model_pad" "$cost_fmt"
   if [ -n "$rate_info" ]; then
     printf "  ${BLUE}|${RESET}  "
     printf "%b" "$rate_info"
   fi
+fi
+
+# Second line: repo (or folder) name and git branch, prefixed with the same arrow as line 1 (Claude Code strips leading spaces)
+MAGENTA='\033[1;35m'
+BOLD_CYAN='\033[1;36m'
+DIM='\033[2m'
+if [ -n "$toplevel" ]; then
+  branch=$(git -C "$dir" --no-optional-locks branch --show-current 2>/dev/null)
+  [ -z "$branch" ] && branch=$(git -C "$dir" --no-optional-locks rev-parse --short HEAD 2>/dev/null)
+
+  # Mid-rebase HEAD is detached; name the branch being rebased and the step instead
+  state=""
+  gitdir=$(git -C "$dir" rev-parse --absolute-git-dir 2>/dev/null)
+  for r in rebase-merge rebase-apply; do
+    [ -d "$gitdir/$r" ] || continue
+    head_name=$(cat "$gitdir/$r/head-name" 2>/dev/null)
+    [ -n "$head_name" ] && branch=${head_name#refs/heads/}
+    step=$(cat "$gitdir/$r/msgnum" "$gitdir/$r/next" 2>/dev/null | head -1)
+    total=$(cat "$gitdir/$r/end" "$gitdir/$r/last" 2>/dev/null | head -1)
+    state=" ${RED}rebasing${step:+ $step/$total}${RESET}"
+  done
+  [ -f "$gitdir/MERGE_HEAD" ] && state=" ${RED}merging${RESET}"
+  [ -f "$gitdir/CHERRY_PICK_HEAD" ] && state=" ${RED}cherry-picking${RESET}"
+
+  [ -n "$(git -C "$dir" --no-optional-locks status --porcelain 2>/dev/null | head -1)" ] && state="${state} ${YELLOW}●${RESET}"
+  if counts=$(git -C "$dir" --no-optional-locks rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then
+    behind=${counts%%[[:space:]]*}
+    ahead=${counts##*[[:space:]]}
+    [ "$ahead" -gt 0 ] && state="${state} ${GREEN}↑${ahead}${RESET}"
+    [ "$behind" -gt 0 ] && state="${state} ${RED}↓${behind}${RESET}"
+  fi
+
+  printf "\n${GREEN}➜${RESET}  ${BOLD_CYAN}%s${RESET}${DIM}%s${RESET}%s  ${BLUE}|${RESET}  ${MAGENTA}⎇ %s${RESET}%b" \
+    "$name" "$rel" "$label_pad" "$branch" "$state"
+else
+  printf "\n${GREEN}➜${RESET}  ${BOLD_CYAN}%s${RESET}" "$name"
 fi
