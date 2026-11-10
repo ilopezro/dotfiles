@@ -2,10 +2,23 @@
 
 import * as casks from "@/commands/casks.ts";
 import * as defaults from "@/commands/defaults.ts";
-import { info, note, step, success, warn } from "@/lib/colors.ts";
+import { fail, info, note, pass, step, success, warn } from "@/lib/colors.ts";
 import { readFields, readLines } from "@/lib/manifest.ts";
 import { DOTFILES_DIR, HOME, installFile } from "@/lib/paths.ts";
 import { capture, has, lines, make, run, succeeds } from "@/lib/proc.ts";
+import { spin } from "@/lib/spinner.ts";
+
+// For per-item updates that need no terminal: a spinner while each runs, then one
+// line per item instead of the tool's own chatter.
+async function updateEach(items: string[], cmd: (item: string) => string[]) {
+  for (const item of items) {
+    if (await spin(item, () => succeeds(cmd(item)))) {
+      pass(item);
+    } else {
+      fail(`${item} (run \`${cmd(item).join(" ")}\` to see why)`);
+    }
+  }
+}
 
 async function installPlugins() {
   for (const [plugin = "", source = ""] of readFields(installFile("Pluginfile"))) {
@@ -110,19 +123,14 @@ export async function update() {
   await run([`${process.env.ZSH ?? `${HOME}/.oh-my-zsh`}/tools/upgrade.sh`]);
 
   step("[4/6] Updating VS Code extensions...");
-  for (const ext of readLines(installFile("Codefile"))) {
-    await run(["code", "--install-extension", ext, "--force"], { quietErrors: true });
-  }
+  await updateEach(readLines(installFile("Codefile")), (ext) => ["code", "--install-extension", ext, "--force"]);
 
   step("[5/6] Updating global npm tools...");
-  for (const pkg of readLines(installFile("Npmfile"))) {
-    await run(["npm", "install", "-g", pkg]);
-  }
+  await updateEach(readLines(installFile("Npmfile")), (pkg) => ["npm", "install", "-g", pkg]);
 
   step("[6/6] Updating Claude Code plugins...");
-  for (const [plugin = ""] of readFields(installFile("Pluginfile"))) {
-    await run(["claude", "plugin", "update", plugin], { quietErrors: true });
-  }
+  const plugins = readFields(installFile("Pluginfile")).map(([plugin = ""]) => plugin);
+  await updateEach(plugins, (plugin) => ["claude", "plugin", "update", plugin]);
 
   success("Done!");
 }
