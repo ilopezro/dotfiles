@@ -114,9 +114,10 @@ export async function update() {
   // Reclaim root-owned apps and restore missing artifacts first, or the upgrade
   // trips over them.
   await casks.repair();
-  await run(["brew", "upgrade"]);
-  // Plain `brew upgrade` skips auto_updates casks, trusting the app's own updater.
-  // That updater can be off or on another channel, so the cask never moves.
+  // Homebrew 7 upgrades auto_updates casks by default, judging them from its receipt
+  // rather than the app on disk, so it can install an older release over an app that
+  // updated itself. Leave those to upgradeSelfUpdating, which checks the app first.
+  await run(["env", "HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1", "brew", "upgrade"]);
   await casks.upgradeSelfUpdating();
 
   step("[3/6] Updating Oh My Zsh...");
