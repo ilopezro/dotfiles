@@ -103,18 +103,36 @@ dot update    # Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh,
 dot health    # Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code plugins, Claude Code skills, and asdf runtimes (--fix runs the fixes)
 dot casks     # check | repair | extras | prune [--all]: verify cask apps are really on disk, fix broken ones, or handle casks not in Caskfile
 dot defaults  # check | apply: report or fix drift from Defaultsfile
+dot branches  # setup | prune [-n] [--all]: choose which git branches stay, then delete the ones that are done (`git tidy`, `gtd`)
 dot clean     # Clean up caches (Homebrew, gem)
 dot edit      # Open dotfiles in VS Code
 dot help      # Show available commands
 ```
 
-`dot casks` and `dot defaults` with no subcommand list their own subcommands; `--help` (or `dot help <command>`) works on any command.
+`dot casks`, `dot defaults`, and `dot branches` with no subcommand list their own subcommands; `--help` (or `dot help <command>`) works on any command.
 
 Output is colored when it goes to a terminal, using the standard ANSI colors so your terminal theme (Catppuccin in Ghostty) picks the shades and follows light/dark switches. Piped output is plain; set `NO_COLOR=1` to turn color off entirely.
 
 When a check fails, `dot health` ends with the exact commands that fix it (e.g. `make -C ~/dotfiles link-files`, `dot casks repair`), which work from any directory, and exits 1, so scripts can use `dot health || ...`. `dot health --fix` runs those commands for you, then checks again.
 
 ![dot health output](docs/dot-health.gif)
+
+### Tidying git branches
+
+`git tidy` (alias `gtd`, same as `dot branches prune`) cleans up the local branches of whatever repo you are in:
+
+```sh
+gtd -n               # List what is kept, what is safe to delete, and what needs a decision
+gtd                  # Same list, then delete: one prompt for the safe ones, one per branch for the rest
+gtd --all            # One prompt for every branch that needs a decision
+dot branches setup   # Choose which branches always stay
+```
+
+- **Kept:** the default branch, every branch checked out in a worktree, and anything matching a `.branchkeep` pattern.
+- **Safe to delete:** a merged pull request exists whose head is the branch's exact commit (asked through `gh`, so squash merges count).
+- **Needs a decision:** everything else, with the reason (never pushed, upstream gone with no merged PR, merged but the branch has other commits, upstream still alive).
+
+`.branchkeep` holds one glob per line (`*` also matches `/`, `#` starts a comment). `~/.branchkeep` (`main`, `master`) applies everywhere; on top of it comes the nearest `.branchkeep` in the repo's directory or a parent, so one file in `~/Projects/team/` covers every repo below it and a repo with its own file uses that one instead. Worktrees use their main checkout's file. The files are globally git-ignored and stay on the machine. With no `.branchkeep` for a repo, `git tidy` says so and asks before deleting anything. Each deletion prints the commit, so `git branch <name> <commit>` brings a branch back.
 
 ### Developing `dot`
 
@@ -125,7 +143,7 @@ make dot-bin      # Rebuild bin/dot
 bun install       # Once, for Biome, editor types, and the typechecker
 bun run check     # Lint (Biome), typecheck, and test together
 bun run fix       # Apply formatting, import sorting, and safe lint fixes
-bun test          # Unit tests (manifest parsing, cask artifacts, defaults)
+bun test          # Unit tests (manifest parsing, cask artifacts, defaults, branches)
 bun run typecheck # tsc --noEmit
 ```
 

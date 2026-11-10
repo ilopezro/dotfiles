@@ -5,10 +5,11 @@
 import { existsSync, lstatSync, readdirSync, readlinkSync, rmSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, join } from "node:path";
-import { C, error, fail, info, note, pass, print, STDERR, section, step, success, warn } from "@/lib/colors.ts";
+import { error, fail, info, note, pass, print, STDERR, section, step, success, warn } from "@/lib/colors.ts";
 import { parseCaskfile, readText } from "@/lib/manifest.ts";
 import { HOME, installFile } from "@/lib/paths.ts";
 import { capture, lines, run, succeeds } from "@/lib/proc.ts";
+import { confirm } from "@/lib/prompt.ts";
 import { spin } from "@/lib/spinner.ts";
 
 export type Artifact = { kind: "app" | "bin"; value: string };
@@ -319,11 +320,6 @@ export async function reportExtras() {
   }
   for (const cask of list) warn(`${cask} (not in Caskfile)`);
   note("Add them to install/Caskfile to keep them, or run `dot casks prune` to uninstall them.");
-}
-
-function confirm(question: string) {
-  const answer = prompt(`${C.bold}${question}${C.reset} [y/N]`) ?? "";
-  return /^(y|yes)$/i.test(answer.trim());
 }
 
 // Prompts per cask by default, since every yes deletes an app. --all asks once for

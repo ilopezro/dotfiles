@@ -3,3 +3,5 @@
 /.build/
 /node_modules/
 *.bun-build
+# The global ignore file hides .branchkeep everywhere; this one is the shared default.
+!/runcom/.branchkeep

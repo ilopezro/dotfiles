@@ -1,0 +1,5 @@
+# Branches `git tidy` never deletes, in every repo on this machine. One glob per
+# line; * also matches "/". A repo adds its own rules with a .branchkeep in its
+# directory or a parent (`dot branches setup`); the nearest one applies on top of this.
+main
+master

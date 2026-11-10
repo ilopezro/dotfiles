@@ -3,3 +3,6 @@
 .cursorignore
 .claude
 .vscode/
+
+# Per-machine keep lists for `git tidy`
+.branchkeep

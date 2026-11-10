@@ -156,7 +156,7 @@ oh-my-zsh:
 link: stow-runcom stow-config link-vscode link-claude
 
 stow-runcom:
-	@$(COLORS) for file in .zshrc .tool-versions .asdfrc; do \
+	@$(COLORS) for file in .zshrc .tool-versions .asdfrc .branchkeep; do \
 		target="$(HOME)/$$file"; \
 		if [ -e "$$target" ] && [ ! -L "$$target" ]; then \
 			backup="$$target.bak.$$(date +%Y%m%d%H%M%S)"; \

@@ -7,6 +7,7 @@ _dot() {
     'update:Update dotfiles (and rebuild dot), Homebrew packages, Oh My Zsh, VS Code extensions, npm tools, and Claude Code plugins'
     'health:Check symlinks, commit signing, required tools, cask apps, macOS defaults, login items, Claude Code, and asdf runtimes'
     'casks:Verify, repair, or prune Homebrew cask apps'
+    'branches:Tidy local git branches, keeping the ones .branchkeep protects'
     'defaults:Check or apply macOS defaults from Defaultsfile'
     'clean:Clean up caches (brew, gem)'
     'edit:Open dotfiles in VS Code'
@@ -31,6 +32,18 @@ _dot() {
         _describe 'casks command' subcommands
       elif [[ "$words[3]" == prune ]]; then
         _values 'option' '--all[One prompt for every cask]'
+      fi
+      ;;
+    branches)
+      if (( CURRENT == 3 )); then
+        subcommands=(
+          'setup:Create or edit the .branchkeep for this repo or a parent directory'
+          'prune:Delete branches whose PR is merged and ask about the rest'
+          'help:Show branches help'
+        )
+        _describe 'branches command' subcommands
+      elif [[ "$words[3]" == prune ]]; then
+        _values 'option' '--dry-run[List only, delete nothing]' '--all[One prompt for every branch that needs a decision]'
       fi
       ;;
     defaults)

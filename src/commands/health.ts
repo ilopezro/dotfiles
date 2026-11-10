@@ -58,7 +58,7 @@ export async function health({ fix = false } = {}): Promise<boolean> {
     check(label, await spin(label, result), fix);
 
   section("Symlinks");
-  for (const file of [".zshrc", ".tool-versions", ".asdfrc"]) {
+  for (const file of [".zshrc", ".tool-versions", ".asdfrc", ".branchkeep"]) {
     check(file, isLink(join(HOME, file)) || "not linked", makeFix("stow-runcom"));
   }
   for (const [src = "", dest = ""] of readFields(installFile("Linkfile"))) {

@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# `git tidy`: deletes local branches that are done. All logic lives in `dot branches`.
+
+exec "$(dirname "$0")/dot" branches prune "$@"

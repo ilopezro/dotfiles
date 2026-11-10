@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import * as branches from "@/commands/branches.ts";
 import * as casks from "@/commands/casks.ts";
 import * as defaults from "@/commands/defaults.ts";
 import { health } from "@/commands/health.ts";
@@ -74,6 +75,22 @@ defaultsCommands
   .command("apply")
   .description("Write values that differ, then restart the affected apps")
   .action(async () => setExit(await defaults.apply()));
+
+const branchCommands = program
+  .command("branches")
+  .description("Tidy local git branches, keeping the ones .branchkeep protects");
+branchCommands
+  .command("setup")
+  .description("Create or edit the .branchkeep that says which branches stay, for this repo or a parent directory")
+  .action(async () => setExit(await branches.setup()));
+branchCommands
+  .command("prune")
+  .description("Delete branches whose PR is merged and ask about the rest (also `git tidy`, `gtd`)")
+  .option("-n, --dry-run", "List what would be kept and deleted, and delete nothing")
+  .option("--all", "Ask once for all the branches that need a decision")
+  .action(async ({ all, dryRun }: { all?: boolean; dryRun?: boolean }) =>
+    setExit(await branches.prune({ all: !!all, dryRun: !!dryRun })),
+  );
 
 program.command("clean").description("Clean up caches (brew, gem)").action(clean);
 program.command("edit").description("Open dotfiles in editor").action(edit);
